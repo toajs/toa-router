@@ -1,6 +1,6 @@
 {
   "name": "toa-router",
-  "description": "A router for toa.",
+  "description": "A trie router for toa.",
   "authors": [
     "Yan Qing <admin@zensh.com>"
   ],
@@ -15,7 +15,9 @@
     "toa",
     "toa-module",
     "toa-middleware",
-    "router"
+    "router",
+    "trie",
+    "trie-router"
   ],
   "dependencies": {
     "methods": "^1.1.0"
@@ -25,9 +27,8 @@
     "gulp-jshint": ">=1.8.4",
     "gulp-mocha": ">=1.0.0",
     "gulp-sequence": ">=0.3.0",
-    "toa": "^0.2.0",
-    "mocha": ">=1.21.0",
-    "should": ">=4.0.4"
+    "toa": "^0.3.0",
+    "mocha": ">=1.21.0"
   },
   "scripts": {
     "test": "gulp test"

@@ -18,7 +18,7 @@ function RouterState(root) {
 function Router(root) {
   if (!(this instanceof Router)) return new Router(root);
 
-  Object.defineProperty(this, '_RouterState', {
+  Object.defineProperty(this, '_routerState', {
     enumerable: false,
     configurable: false,
     writable: false,
@@ -31,7 +31,7 @@ Router.prototype.define = function (pattern) {
 };
 
 Router.prototype.route = function (context, Thunk) {
-  var state = this._RouterState;
+  var state = this._routerState;
 
   return Thunk.call(context)(function () {
     var normalPath = path.normalize(this.path);
@@ -55,7 +55,7 @@ Router.prototype.route = function (context, Thunk) {
 
     var handler = match.node.methods[method];
 
-    // If no route function is returned
+    // If no route handler is returned
     // it's a 405 error
     if (!handler) {
       this.set('Allow', match.node.allowMethods);
@@ -68,7 +68,7 @@ Router.prototype.route = function (context, Thunk) {
 };
 
 function Route(router, pattern) {
-  Object.defineProperty(this, '_RouteState', {
+  Object.defineProperty(this, '_routeState', {
     enumerable: false,
     configurable: false,
     writable: false,
@@ -81,13 +81,13 @@ function Route(router, pattern) {
 
 methods.map(function (method) {
   Router.prototype[method] = function (pattern, handler) {
-    var state = this._RouterState;
+    var state = this._routerState;
     var method = method.toUpperCase();
 
     var route = state.trie.define(pattern);
     route.methods = route.methods || {};
 
-    if (route.methods[method]) throw new Error('The route in "' + pattern + '" already defined.');
+    assert(!route.methods[method], 'The route in "' + pattern + '" already defined.');
     assert(typeof handler === 'function', 'Handler must be a function.');
     route.methods[method] = handler;
     if (!route.allowMethods) route.allowMethods = method;
@@ -97,7 +97,7 @@ methods.map(function (method) {
   };
 
   Route.prototype[method] = function (handler) {
-    var state = this._RouteState;
+    var state = this._routeState;
     state.router[method](state.pattern, handler);
     return this;
   };
