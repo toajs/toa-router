@@ -6,7 +6,7 @@
 var path = require('path');
 var assert = require('assert');
 var methods = require('methods');
-var Trie = require('./lib/trie');
+var Trie = require('route-trie');
 
 module.exports = Router;
 
@@ -82,9 +82,8 @@ function Route(router, pattern) {
 methods.map(function (method) {
   Router.prototype[method] = function (pattern, handler) {
     var state = this._routerState;
-    var method = method.toUpperCase();
-
     var route = state.trie.define(pattern);
+    method = method.toUpperCase();
     route.methods = route.methods || {};
 
     assert(!route.methods[method], 'The route in "' + pattern + '" already defined.');
@@ -95,10 +94,15 @@ methods.map(function (method) {
 
     return this;
   };
+});
 
+methods.map(function (method) {
   Route.prototype[method] = function (handler) {
     var state = this._routeState;
     state.router[method](state.pattern, handler);
     return this;
   };
 });
+
+Router.prototype.del = Router.prototype.delete;
+Route.prototype.del = Route.prototype.delete;
