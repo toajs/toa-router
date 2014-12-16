@@ -2,8 +2,8 @@
 /*global describe, it, before, after, beforeEach, afterEach, Promise, noneFn*/
 
 var assert = require('assert');
-var Trie = require('../lib/trie.js');
 
 describe('toa-router', function () {
+  // TODO
   it.skip('trie.define', function () {});
 });

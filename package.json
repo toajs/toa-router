@@ -4,11 +4,14 @@
   "authors": [
     "Yan Qing <admin@zensh.com>"
   ],
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git@github.com:toajs/toa-router.git"
+  },
+  "engines": {
+    "node": ">=0.10.0"
   },
   "homepage": "https://github.com/toajs/toa-router",
   "keywords": [
@@ -28,9 +31,8 @@
     "gulp-jshint": ">=1.8.4",
     "gulp-mocha": ">=1.0.0",
     "gulp-sequence": ">=0.3.0",
-    "http-errors": "^1.2.8",
     "mocha": ">=1.21.0",
-    "toa": "^0.3.0"
+    "toa": ">=0.4.2"
   },
   "scripts": {
     "test": "gulp test"

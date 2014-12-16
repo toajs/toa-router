@@ -1,4 +1,4 @@
-toa-router v0.1.0 [![Build Status](https://travis-ci.org/toajs/toa-router.svg)](https://travis-ci.org/toajs/toa-router)
+toa-router v0.1.1 [![Build Status](https://travis-ci.org/toajs/toa-router.svg)](https://travis-ci.org/toajs/toa-router)
 ====
 A trie router for toa.
 
