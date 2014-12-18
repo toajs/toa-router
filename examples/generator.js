@@ -32,7 +32,7 @@ var mockTasks = [{
 var router = new Router('/api');
 var router2 = new Router();
 
-router.get('', function(Thunk) {
+router.get('/', function(Thunk) {
   this.body = 'Hi, toa router';
 });
 
@@ -98,12 +98,9 @@ router2.get('/:others(*)', function(Thunk) {
   this.body = 'Path is: ' + this.params.others;
 });
 
-var app = Toa(function(Thunk) {
-  return Thunk.call(this)(function() {
-    return router.route(this, Thunk);
-  })(function() {
-    return router2.route(this, Thunk);
-  });
+var app = Toa(function*(Thunk) {
+  yield router.route(this, Thunk);
+  yield router2.route(this, Thunk);
 });
 
 app.listen(3000);

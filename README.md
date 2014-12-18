@@ -1,4 +1,4 @@
-toa-router v0.1.1 [![Build Status](https://travis-ci.org/toajs/toa-router.svg)](https://travis-ci.org/toajs/toa-router)
+toa-router v0.2.0 [![Build Status](https://travis-ci.org/toajs/toa-router.svg)](https://travis-ci.org/toajs/toa-router)
 ====
 A trie router for toa.
 
@@ -67,10 +67,22 @@ APIRouter.define('/tasks/:id')
   });
 
 Toa(function (Thunk) {
-  return Thunk.all.call(this, APIRouter.route(this, Thunk), staticRouter.route(this, Thunk))(function (error, res) {
-    // do others...
+  return Thunk.call(this)(function () {
+    return APIRouter.route(this, Thunk);
+  })(function () {
+    return staticRouter.route(this, Thunk);
+  })(function () {
+    // do others
   });
 }).listen(3000);
+
+// use generator
+
+// Toa(function* (Thunk) {
+//   yield APIRouter.route(this, Thunk);
+//   yield staticRouter.route(this, Thunk);
+//   // do others
+// }).listen(3000);
 ```
 
 ## Installation
@@ -147,6 +159,8 @@ Each fragment of the pattern, delimited by a `/`, can have the following signatu
 - `:name` - Wildcard route matched to a name, ex `/:type`
 - `(regex)` - A regular expression match without saving the parameter (not recommended), ex `/(post|task)`, `/([a-z0-9]{6})`
 - `:name(regex)`- Named regular expression match ex `/:type/:id([a-z0-9]{6})`
+- `*` - Match remaining path without saving the parameter (not recommended), ex `/*` will match all path.
+- `:name(*)`- Named regular expression match, match remaining path, ex `/:type/:other(*)` will match `/post/x` or `/task/x/y` or `/any/x/y/z`...
 
 ### this.params, this.request.params
 
@@ -169,6 +183,10 @@ router
     else this.throw(404, this.path + ' is not found!');
   });
 ```
+
+### this.routedPath, this.request.routedPath
+
+`this.routedPath` will be defined with routed path.
 
 ## License
 

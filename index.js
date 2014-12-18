@@ -11,7 +11,8 @@ var Trie = require('route-trie');
 module.exports = Router;
 
 function RouterState(root) {
-  this.root = root;
+  if (root) root = root.replace(/(\/)+$/, '');
+  this.root = root || '';
   this.trie = new Trie();
 }
 
@@ -26,18 +27,19 @@ function Router(root) {
   });
 }
 
-Router.prototype.define = function (pattern) {
+Router.prototype.define = function(pattern) {
   return new Route(this, pattern);
 };
 
-Router.prototype.route = function (context, Thunk) {
+Router.prototype.route = function(context, Thunk) {
   var state = this._routerState;
 
-  return Thunk.call(context)(function () {
+  return Thunk.call(context)(function() {
     var normalPath = path.normalize(this.path);
     var method = this.method;
 
-    if (state.root && normalPath.indexOf(state.root) !== 0) return;
+    if (this.routedPath || (state.root && (normalPath + '/').indexOf(state.root + '/') !== 0)) return;
+    this.routedPath = this.request.routedPath = normalPath;
     normalPath = normalPath.replace(state.root, '');
 
     var match = state.trie.match(normalPath);
@@ -79,8 +81,8 @@ function Route(router, pattern) {
   });
 }
 
-methods.map(function (method) {
-  Router.prototype[method] = function (pattern, handler) {
+methods.map(function(method) {
+  Router.prototype[method] = function(pattern, handler) {
     var state = this._routerState;
     var route = state.trie.define(pattern);
     method = method.toUpperCase();
@@ -96,8 +98,8 @@ methods.map(function (method) {
   };
 });
 
-methods.map(function (method) {
-  Route.prototype[method] = function (handler) {
+methods.map(function(method) {
+  Route.prototype[method] = function(handler) {
     var state = this._routeState;
     state.router[method](state.pattern, handler);
     return this;
