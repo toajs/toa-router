@@ -61,7 +61,7 @@ Router.prototype.route = function(context, Thunk) {
     // it's a 405 error
     if (!handler) {
       this.set('Allow', match.node.allowMethods);
-      this.throw(405, this.method + ' is not implemented in "' + this.path + '".');
+      this.throw(405, this.method + ' is not allowed in "' + this.path + '".');
     }
 
     this.params = this.request.params = match.params;

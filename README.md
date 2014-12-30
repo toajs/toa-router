@@ -1,6 +1,9 @@
-toa-router v0.2.0 [![Build Status](https://travis-ci.org/toajs/toa-router.svg)](https://travis-ci.org/toajs/toa-router)
+toa-router
 ====
 A trie router for toa.
+
+[![NPM version][npm-image]][npm-url]
+[![Build Status][travis-image]][travis-url]
 
 ## [toa](https://github.com/toajs/toa)
 
@@ -191,3 +194,9 @@ router
 ## License
 
 The MIT License (MIT)
+
+[npm-url]: https://npmjs.org/package/toa-router
+[npm-image]: http://img.shields.io/npm/v/toa-router.svg
+
+[travis-url]: https://travis-ci.org/toajs/toa-router
+[travis-image]: http://img.shields.io/travis/toajs/toa-router.svg
