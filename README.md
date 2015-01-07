@@ -31,6 +31,9 @@ staticRouter
   })
   .get('/about', function (Thunk) {
     // ... GET /about
+  })
+  .otherwise(function (Thunk) {
+    // ....
   });
 
 APIRouter
@@ -150,6 +153,10 @@ router
     // ...
   });
 ```
+
+### Router.prototype.otherwise(handler)
+
+Set default route definition that will be used when no other route definition is matched.
 
 ### Path Definitions
 

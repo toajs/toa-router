@@ -31,6 +31,12 @@ Router.prototype.define = function(pattern) {
   return new Route(this, pattern);
 };
 
+Router.prototype.otherwise = function(handler) {
+  assert(typeof handler === 'function', 'Handler must be a function.');
+  this._routerState.otherwise = handler;
+  return this;
+};
+
 Router.prototype.route = function(context, Thunk) {
   var state = this._routerState;
 
@@ -43,7 +49,10 @@ Router.prototype.route = function(context, Thunk) {
     normalPath = normalPath.replace(state.root, '');
 
     var match = state.trie.match(normalPath);
-    if (!match) this.throw(501, '"' + this.path + '" is not implemented.');
+    if (!match) {
+      if (state.otherwise) return state.otherwise.call(this, Thunk);
+      this.throw(501, '"' + this.path + '" is not implemented.');
+    }
 
     // If no HEAD route, default to GET.
     if (method === 'HEAD' && !match.node.methods.HEAD) method = 'GET';
