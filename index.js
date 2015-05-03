@@ -4,15 +4,13 @@
 // **License:** MIT
 
 var path = require('path');
-var assert = require('assert');
 var methods = require('methods');
 var Trie = require('route-trie');
 
 module.exports = Router;
 
 function RouterState(root) {
-  if (root) root = root.replace(/(\/)+$/, '');
-  this.root = root || '';
+  this.root = typeof root === 'string' ? root.replace(/(\/)+$/, '') : '';
   this.trie = new Trie();
 }
 
@@ -32,7 +30,7 @@ Router.prototype.define = function(pattern) {
 };
 
 Router.prototype.otherwise = function(handler) {
-  assert(typeof handler === 'function', 'Handler must be a function.');
+  if (typeof handler !== 'function') throw new TypeError('Handler must be a function.');
   this._routerState.otherwise = handler;
   return this;
 };
@@ -93,15 +91,15 @@ function Route(router, pattern) {
 methods.map(function(method) {
   Router.prototype[method] = function(pattern, handler) {
     var state = this._routerState;
-    var route = state.trie.define(pattern);
+    var node = state.trie.define(pattern);
     method = method.toUpperCase();
-    route.methods = route.methods || {};
+    node.methods = node.methods || Object.create(null);
 
-    assert(!route.methods[method], 'The route in "' + pattern + '" already defined.');
-    assert(typeof handler === 'function', 'Handler must be a function.');
-    route.methods[method] = handler;
-    if (!route.allowMethods) route.allowMethods = method;
-    else route.allowMethods += ', ' + method;
+    if (node.methods[method]) throw new Error('The route in "' + pattern + '" already defined.');
+    if (typeof handler !== 'function') throw new TypeError('Handler must be a function.');
+    node.methods[method] = handler;
+    if (!node.allowMethods) node.allowMethods = method;
+    else node.allowMethods += ', ' + method;
 
     return this;
   };

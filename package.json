@@ -4,7 +4,7 @@
   "authors": [
     "Yan Qing <admin@zensh.com>"
   ],
-  "version": "0.3.0",
+  "version": "1.0.0",
   "main": "index.js",
   "repository": {
     "type": "git",
@@ -23,16 +23,17 @@
     "trie-router"
   ],
   "dependencies": {
-    "methods": "^1.1.0",
-    "route-trie": "^0.2.0"
+    "methods": "^1.1.1",
+    "route-trie": "^1.0.0"
   },
   "devDependencies": {
-    "gulp": ">=3.8.0",
-    "gulp-jshint": ">=1.8.4",
-    "gulp-mocha": ">=1.0.0",
-    "gulp-sequence": ">=0.3.0",
-    "mocha": ">=1.21.0",
-    "toa": ">=0.6.0"
+    "gulp": ">=3.8.11",
+    "gulp-jshint": ">=1.10.0",
+    "gulp-mocha": ">=2.0.1",
+    "gulp-sequence": ">=0.3.2",
+    "mocha": ">=2.2.4",
+    "supertest": "^0.15.0",
+    "toa": ">=0.9.0"
   },
   "scripts": {
     "test": "gulp test"
