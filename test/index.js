@@ -229,7 +229,10 @@ describe('toa-router', function() {
     });
 
     router2.get('/', function() {
-      this.body = 'api';
+      return function(callback) {
+        this.body = 'api';
+        callback();
+      };
     });
 
     var app = Toa(function() {

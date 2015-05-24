@@ -51,7 +51,7 @@ Router.prototype.route = function(context) {
 
     var match = state.trie.match(normalPath);
     if (!match) {
-      if (state.otherwise) return callback(null, state.otherwise.call(this));
+      if (state.otherwise) return this.thunk(state.otherwise.call(this))(callback);
       this.throw(501, '"' + this.path + '" is not implemented.');
     }
 
@@ -75,7 +75,7 @@ Router.prototype.route = function(context) {
     }
 
     this.params = this.request.params = match.params;
-    return callback(null, handler.call(this));
+    return this.thunk(handler.call(this))(callback);
   });
 };
 
