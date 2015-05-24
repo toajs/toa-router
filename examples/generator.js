@@ -32,13 +32,13 @@ var mockTasks = [{
 var router = new Router('/api');
 var router2 = new Router();
 
-router.get('/', function(Thunk) {
+router.get('/', function() {
   this.body = 'Hi, toa router';
 });
 
 router
   .define('/:type(posts|tasks)')
-  .get(function(Thunk) {
+  .get(function() {
     var data = null;
     switch (this.params.type) {
       case 'posts':
@@ -54,7 +54,7 @@ router
 
 router
   .define('/:type(posts|tasks)/:id([0-9]+)')
-  .get(function(Thunk) {
+  .get(function() {
     var data = null;
     switch (this.params.type) {
       case 'posts':
@@ -67,7 +67,7 @@ router
     if (data) this.body = resJSON(data);
     else this.throw(404, this.path + ' is not found!');
   })
-  .post(function(Thunk) {
+  .post(function() {
     var data = null;
     switch (this.params.type) {
       case 'posts':
@@ -80,7 +80,7 @@ router
     if (data) this.body = resJSON(data);
     else this.throw(404, this.path + ' is not found!');
   })
-  .del(function(Thunk) {
+  .del(function() {
     var data = null;
     switch (this.params.type) {
       case 'posts':
@@ -94,13 +94,15 @@ router
     else this.throw(404, this.path + ' is not found!');
   });
 
-router2.get('/:others(*)', function(Thunk) {
+router2.get('/:others(*)', function() {
   this.body = 'Path is: ' + this.params.others;
 });
 
-var app = Toa(function*(Thunk) {
-  yield router.route(this, Thunk);
-  yield router2.route(this, Thunk);
+var app = Toa(function*() {
+  yield [
+    router.route(this),
+    router2.route(this)
+  ];
 });
 
 app.listen(3000);

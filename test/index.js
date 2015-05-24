@@ -14,8 +14,8 @@ describe('toa-router', function() {
       this.body = 'OK';
     });
 
-    var app = Toa(function(Thunk) {
-      return router.route(this, Thunk);
+    var app = Toa(function() {
+      return router.route(this);
     });
 
     request(app.listen())
@@ -34,8 +34,8 @@ describe('toa-router', function() {
       this.body = '/' + this.params.type + '/' + this.params.id;
     });
 
-    var app = Toa(function(Thunk) {
-      return router.route(this, Thunk);
+    var app = Toa(function() {
+      return router.route(this);
     });
 
     request(app.listen())
@@ -58,8 +58,8 @@ describe('toa-router', function() {
         this.body = 'POST /' + this.params.type + '/' + this.params.id;
       });
 
-    var app = Toa(function(Thunk) {
-      return router.route(this, Thunk);
+    var app = Toa(function() {
+      return router.route(this);
     });
 
     request(app.listen())
@@ -78,8 +78,8 @@ describe('toa-router', function() {
       this.status = 200;
     });
 
-    var app = Toa(function(Thunk) {
-      return router.route(this, Thunk);
+    var app = Toa(function() {
+      return router.route(this);
     });
 
     request(app.listen())
@@ -97,8 +97,8 @@ describe('toa-router', function() {
       this.status = 200;
     });
 
-    var app = Toa(function(Thunk) {
-      return router.route(this, Thunk);
+    var app = Toa(function() {
+      return router.route(this);
     });
 
     request(app.listen())
@@ -118,8 +118,8 @@ describe('toa-router', function() {
       .put('/:type/:id', function() {})
       .del('/:type/:id', function() {});
 
-    var app = Toa(function(Thunk) {
-      return router.route(this, Thunk);
+    var app = Toa(function() {
+      return router.route(this);
     });
 
     request(app.listen())
@@ -138,8 +138,8 @@ describe('toa-router', function() {
     var router = new Router();
     router.get('/', function() {});
 
-    var app = Toa(function(Thunk) {
-      return router.route(this, Thunk);
+    var app = Toa(function() {
+      return router.route(this);
     });
 
     request(app.listen())
@@ -157,8 +157,8 @@ describe('toa-router', function() {
       .get('/:type/:id', function() {})
       .post('/:type/:id', function() {});
 
-    var app = Toa(function(Thunk) {
-      return router.route(this, Thunk);
+    var app = Toa(function() {
+      return router.route(this);
     });
 
     request(app.listen())
@@ -178,8 +178,8 @@ describe('toa-router', function() {
       .put(function() {})
       .del(function() {});
 
-    var app = Toa(function(Thunk) {
-      return router.route(this, Thunk);
+    var app = Toa(function() {
+      return router.route(this);
     });
 
     request(app.listen())
@@ -206,8 +206,8 @@ describe('toa-router', function() {
       this.body = 'api';
     });
 
-    var app = Toa(function(Thunk) {
-      return Thunk.all(router2.route(this, Thunk), router1.route(this, Thunk));
+    var app = Toa(function() {
+      return this.thunk.all(router2.route(this), router1.route(this));
     });
 
     request(app.listen())
@@ -232,8 +232,8 @@ describe('toa-router', function() {
       this.body = 'api';
     });
 
-    var app = Toa(function(Thunk) {
-      return Thunk.all(router2.route(this, Thunk), router1.route(this, Thunk));
+    var app = Toa(function() {
+      return this.thunk.all(router2.route(this), router1.route(this));
     });
 
     request(app.listen())

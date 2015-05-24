@@ -35,20 +35,23 @@ Router.prototype.otherwise = function(handler) {
   return this;
 };
 
-Router.prototype.route = function(context, Thunk) {
+Router.prototype.route = function(context) {
   var state = this._routerState;
 
-  return Thunk.call(context)(function() {
+  // back-compat
+  if (!context.thunk) context.thunk = arguments[1];
+
+  return context.thunk(function(callback) {
     var normalPath = path.normalize(this.path);
     var method = this.method;
 
-    if (this.routedPath || (state.root && (normalPath + '/').indexOf(state.root + '/') !== 0)) return;
+    if (this.routedPath || (state.root && (normalPath + '/').indexOf(state.root + '/') !== 0)) return callback();
     this.routedPath = this.request.routedPath = normalPath;
     normalPath = normalPath.replace(state.root, '');
 
     var match = state.trie.match(normalPath);
     if (!match) {
-      if (state.otherwise) return state.otherwise.call(this, Thunk);
+      if (state.otherwise) return callback(null, state.otherwise.call(this));
       this.throw(501, '"' + this.path + '" is not implemented.');
     }
 
@@ -59,7 +62,7 @@ Router.prototype.route = function(context, Thunk) {
     if (method === 'OPTIONS') {
       this.status = 204;
       this.set('Allow', match.node.allowMethods);
-      return;
+      return callback();
     }
 
     var handler = match.node.methods[method];
@@ -72,7 +75,7 @@ Router.prototype.route = function(context, Thunk) {
     }
 
     this.params = this.request.params = match.params;
-    return handler.call(this, Thunk);
+    return callback(null, handler.call(this));
   });
 };
 

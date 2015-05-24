@@ -23,72 +23,70 @@ var staticRouter = new Router();
 var APIRouter = new Router('/api');
 
 staticRouter
-  .get('/', function (Thunk) {
+  .get('/', function() {
     // ... GET /
   })
-  .get('/blog', function (Thunk) {
+  .get('/blog', function() {
     // ... GET /blog
   })
-  .get('/about', function (Thunk) {
+  .get('/about', function() {
     // ... GET /about
   })
-  .otherwise(function (Thunk) {
+  .otherwise(function() {
     // ....
   });
 
 APIRouter
-  .get('/posts', function (Thunk) {
+  .get('/posts', function() {
     // ... GET /api/posts
   })
-  .get('/tasks', function (Thunk) {
+  .get('/tasks', function() {
     // ... GET /api/tasks
   });
 
 APIRouter.define('/posts/:id')
-  .get(function (Thunk) {
+  .get(function() {
     // ... GET /api/post/idxxx
   })
-  .put(function (Thunk) {
+  .put(function() {
     // ... PUT /api/post/idxxx
   })
-  .post(function (Thunk) {
+  .post(function() {
     // ... POST /api/post/idxxx
   })
-  .del(function (Thunk) {
+  .del(function() {
     // ... DELETE /api/post/idxxx
   });
 
 APIRouter.define('/tasks/:id')
-  .get(function (Thunk) {
+  .get(function() {
     // ... GET /api/tasks/idxxx
   })
-  .put(function (Thunk) {
+  .put(function() {
     // ... PUT /api/tasks/idxxx
   })
-  .post(function (Thunk) {
+  .post(function() {
     // ... POST /api/tasks/idxxx
   })
-  .del(function (Thunk) {
+  .del(function() {
     // ... DELETE /api/tasks/idxxx
   });
 
-Toa(function (Thunk) {
-  return Thunk.call(this)(function () {
-    return APIRouter.route(this, Thunk);
-  })(function () {
-    return staticRouter.route(this, Thunk);
-  })(function () {
+// use generator
+Toa(function*() {
+  yield [
+    APIRouter.route(this),
+    staticRouter.route(this)
+  ];
+  // do others
+}).listen(3000);
+
+// no generator
+Toa(function() {
+  return this.thunk.all.call(this, APIRouter.route(this), staticRouter.route(this))(function() {
     // do others
   });
 }).listen(3000);
-
-// use generator
-
-// Toa(function* (Thunk) {
-//   yield APIRouter.route(this, Thunk);
-//   yield staticRouter.route(this, Thunk);
-//   // do others
-// }).listen(3000);
 ```
 
 ## Installation
@@ -112,13 +110,13 @@ var router = new Router();
 var APIRouter = new Router('/api');
 ```
 
-### Router.prototype.route(context, Thunk)
+### Router.prototype.route(context)
 
-Run the router with `context` and `Thunk`.
+Run the router with `context`.
 
 ```js
-Toa(function (Thunk) {
-  return router.route(this, Thunk);
+Toa(function() {
+  return router.route(this);
 }).listen(3000);
 ```
 
@@ -129,10 +127,10 @@ Define a route with the url pattern.
 ```js
 var route = router.define('/:type/:id');
 
-route.get(function (Thunk) {})
-  .put(function (Thunk) {})
-  .post(function (Thunk) {})
-  .del(function (Thunk) {});
+route.get(function() {})
+  .put(function() {})
+  .post(function() {})
+  .del(function() {});
 // support all `http.METHODS`: 'get', 'post', 'put', 'head', 'delete', 'options', 'trace', 'copy', 'lock'...
 ```
 
@@ -146,10 +144,10 @@ Support generator handler:
 
 ```js
 router
-  .get('/:type/:id', function* (Thunk) {
+  .get('/:type/:id', function*() {
     // ...
   })
-  .put('/:type/:id', function* (Thunk) {
+  .put('/:type/:id', function*() {
     // ...
   });
 ```
@@ -179,7 +177,7 @@ Each fragment of the pattern, delimited by a `/`, can have the following signatu
 ```js
 router
   .define('/:type(posts|tasks)')
-  .get(function (Thunk) {
+  .get(function() {
     var data = null;
     switch (this.params.type) {
       case 'posts':
