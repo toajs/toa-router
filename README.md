@@ -16,77 +16,77 @@ A trie router for toa.
 
 ## Demo
 ```js
-var Toa = require('toa');
-var Router = require('toa-router');
+var Toa = require('toa')
+var Router = require('toa-router')
 
-var staticRouter = new Router();
-var APIRouter = new Router('/api');
+var staticRouter = new Router()
+var APIRouter = new Router('/api')
 
 staticRouter
-  .get('/', function() {
+  .get('/', function () {
     // ... GET /
   })
-  .get('/blog', function() {
+  .get('/blog', function () {
     // ... GET /blog
   })
-  .get('/about', function() {
+  .get('/about', function () {
     // ... GET /about
   })
-  .otherwise(function() {
+  .otherwise(function () {
     // ....
-  });
+  })
 
 APIRouter
-  .get('/posts', function() {
+  .get('/posts', function () {
     // ... GET /api/posts
   })
-  .get('/tasks', function() {
+  .get('/tasks', function () {
     // ... GET /api/tasks
-  });
+  })
 
 APIRouter.define('/posts/:id')
-  .get(function() {
+  .get(function () {
     // ... GET /api/post/idxxx
   })
-  .put(function() {
+  .put(function () {
     // ... PUT /api/post/idxxx
   })
-  .post(function() {
+  .post(function () {
     // ... POST /api/post/idxxx
   })
-  .del(function() {
+  .del(function () {
     // ... DELETE /api/post/idxxx
-  });
+  })
 
 APIRouter.define('/tasks/:id')
-  .get(function() {
+  .get(function () {
     // ... GET /api/tasks/idxxx
   })
-  .put(function() {
+  .put(function () {
     // ... PUT /api/tasks/idxxx
   })
-  .post(function() {
+  .post(function () {
     // ... POST /api/tasks/idxxx
   })
-  .del(function() {
+  .del(function () {
     // ... DELETE /api/tasks/idxxx
-  });
+  })
 
 // use generator
-Toa(function*() {
+Toa(function *() {
   yield [
     APIRouter.route(this),
     staticRouter.route(this)
-  ];
+  ]
   // do others
-}).listen(3000);
+}).listen(3000)
 
 // no generator
-Toa(function() {
-  return this.thunk.all.call(this, APIRouter.route(this), staticRouter.route(this))(function() {
+Toa(function () {
+  return this.thunk.all.call(this, APIRouter.route(this), staticRouter.route(this))(function () {
     // do others
-  });
-}).listen(3000);
+  })
+}).listen(3000)
 ```
 
 ## Installation
@@ -98,7 +98,7 @@ npm install toa-router
 ## API
 
 ```js
-var Router = require('toa-router');
+var Router = require('toa-router')
 ```
 
 ### new Router([root])
@@ -106,8 +106,8 @@ var Router = require('toa-router');
 - `root` *Option*, `String`, define the router's scope。
 
 ```js
-var router = new Router();
-var APIRouter = new Router('/api');
+var router = new Router()
+var APIRouter = new Router('/api')
 ```
 
 ### Router.prototype.route(context)
@@ -115,9 +115,9 @@ var APIRouter = new Router('/api');
 Run the router with `context`.
 
 ```js
-Toa(function() {
-  return router.route(this);
-}).listen(3000);
+Toa(function () {
+  return router.route(this)
+}).listen(3000)
 ```
 
 ### Router.prototype.define(pattern)
@@ -125,12 +125,12 @@ Toa(function() {
 Define a route with the url pattern.
 
 ```js
-var route = router.define('/:type/:id');
+var route = router.define('/:type/:id')
 
-route.get(function() {})
-  .put(function() {})
-  .post(function() {})
-  .del(function() {});
+route.get(function () {})
+  .put(function () {})
+  .post(function () {})
+  .del(function () {})
 // support all `http.METHODS`: 'get', 'post', 'put', 'head', 'delete', 'options', 'trace', 'copy', 'lock'...
 ```
 
@@ -144,12 +144,12 @@ Support generator handler:
 
 ```js
 router
-  .get('/:type/:id', function*() {
+  .get('/:type/:id', function *() {
     // ...
   })
-  .put('/:type/:id', function*() {
+  .put('/:type/:id', function *() {
     // ...
-  });
+  })
 ```
 
 ### Router.prototype.otherwise(handler)
@@ -177,19 +177,19 @@ Each fragment of the pattern, delimited by a `/`, can have the following signatu
 ```js
 router
   .define('/:type(posts|tasks)')
-  .get(function() {
-    var data = null;
+  .get(function () {
+    var data = null
     switch (this.params.type) {
       case 'posts':
-        data = mockPosts;
-        break;
+        data = mockPosts
+        break
       case 'tasks':
-        data = mockTasks;
-        break;
+        data = mockTasks
+        break
     }
-    if (data) this.body = resJSON(data);
-    else this.throw(404, this.path + ' is not found!');
-  });
+    if (data) this.body = resJSON(data)
+    else this.throw(404, this.path + ' is not found!')
+  })
 ```
 
 ### this.routedPath, this.request.routedPath
