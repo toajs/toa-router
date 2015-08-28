@@ -42,7 +42,7 @@ Router.prototype.route = function(context) {
   if (!context.thunk) context.thunk = arguments[1];
 
   return context.thunk(function(callback) {
-    var normalPath = path.normalize(this.path);
+    var normalPath = path.normalize(this.path).replace(/\\/g, '/');
     var method = this.method;
 
     if (this.routedPath || (state.root && (normalPath + '/').indexOf(state.root + '/') !== 0)) return callback();
