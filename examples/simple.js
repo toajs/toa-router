@@ -5,108 +5,45 @@
 var Toa = require('toa')
 var Router = require('../index')
 
-var mockPosts = [{
-  id: '0',
-  title: 'post 1',
-  content: 'content 1'
-}, {
-  id: '1',
-  title: 'post 2',
-  content: 'content 2'
-}, {
-  id: '2',
-  title: 'post 3',
-  content: 'content 3'
-}]
-
-var mockTasks = [{
-  id: '0',
-  title: 'task 1',
-  content: 'content 1'
-}, {
-  id: '1',
-  title: 'task 2',
-  content: 'content 2'
-}]
-
-var router = new Router('/api')
-var router2 = new Router()
-
-router.get('', function () {
-  this.body = 'Hi, toa router'
-})
+var router = new Router()
 
 router
-  .define('/:type(posts|tasks)')
-  .get(function () {
-    var data = null
-    switch (this.params.type) {
-      case 'posts':
-        data = mockPosts
-        break
-      case 'tasks':
-        data = mockTasks
-        break
+  .get('', function () {
+    // sync handle
+    this.body = this.method + ' ' + this.path
+  })
+  .get('/promise', function () {
+    // promise handle
+    var ctx = this
+    return Promise.resolve().then(function () {
+      ctx.body = ctx.method + ' ' + ctx.path
+    })
+  })
+  .get('/thunk', function () {
+    // thunk handle
+    return function (done) {
+      this.body = this.method + ' ' + this.path
+      done()
     }
-    if (data) this.body = resJSON(data)
-    else this.throw(404, this.path + ' is not found!')
+  })
+  .get('/generator', function *() {
+    // generator handle
+    this.body = this.method + ' ' + this.path
   })
 
 router
-  .define('/:type(posts|tasks)/:id([0-9]+)')
+  .define('/user/:id([0-9]+)')
   .get(function () {
-    var data = null
-    switch (this.params.type) {
-      case 'posts':
-        data = mockPosts[this.params.id]
-        break
-      case 'tasks':
-        data = mockTasks[this.params.id]
-        break
-    }
-    if (data) this.body = resJSON(data)
-    else this.throw(404, this.path + ' is not found!')
+    this.body = 'Read from:' + this.method + ' ' + this.path
   })
   .post(function () {
-    var data = null
-    switch (this.params.type) {
-      case 'posts':
-        data = mockPosts[this.params.id]
-        break
-      case 'tasks':
-        data = mockTasks[this.params.id]
-        break
-    }
-    if (data) this.body = resJSON(data)
-    else this.throw(404, this.path + ' is not found!')
+    this.body = 'Add to:' + this.method + ' ' + this.path
   })
-  .del(function () {
-    var data = null
-    switch (this.params.type) {
-      case 'posts':
-        data = mockPosts[this.params.id]
-        break
-      case 'tasks':
-        data = mockTasks[this.params.id]
-        break
-    }
-    if (data) this.body = resJSON(data)
-    else this.throw(404, this.path + ' is not found!')
-  })
-
-router2.get('/:others(*)', function () {
-  this.body = 'Path is: ' + this.params.others
-})
 
 var app = Toa(function () {
-  return this.thunk.all.call(this, router.route(this), router2.route(this))
+  return router.route(this)
 })
 
-app.listen(3000)
-
-function resJSON (data) {
-  return {
-    data: data,
-    timestamp: Date.now()
-  }
-}
+app.listen(3000, function () {
+  console.log('Listened 3000')
+})

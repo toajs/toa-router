@@ -12,6 +12,7 @@ module.exports = Router
 function RouterState (root) {
   this.root = typeof root === 'string' ? root.replace(/(\/)+$/, '') : ''
   this.trie = new Trie()
+  this.otherwise = null
 }
 
 function Router (root) {
@@ -35,47 +36,54 @@ Router.prototype.otherwise = function (handler) {
   return this
 }
 
+Router.prototype.toThunk = function () {
+  var ctx = this
+  return function (done) {
+    ctx.route(this)(done)
+  }
+}
+
 Router.prototype.route = function (context) {
   var state = this._routerState
 
   // back-compat
   if (!context.thunk) context.thunk = arguments[1]
 
-  return context.thunk(function (callback) {
+  return context.thunk(function (done) {
     var normalPath = path.normalize(this.path).replace(/\\/g, '/')
     var method = this.method
 
-    if (this.routedPath || (state.root && (normalPath + '/').indexOf(state.root + '/') !== 0)) return callback()
+    if (this.routedPath || (state.root && (normalPath + '/').indexOf(state.root + '/') !== 0)) return done()
     this.routedPath = this.request.routedPath = normalPath
     normalPath = normalPath.replace(state.root, '')
 
-    var match = state.trie.match(normalPath)
-    if (!match) {
-      if (state.otherwise) return this.thunk(state.otherwise.call(this))(callback)
+    var matched = state.trie.match(normalPath)
+    if (!matched) {
+      if (state.otherwise) return this.thunk(state.otherwise.call(this))(done)
       this.throw(501, '"' + this.path + '" is not implemented.')
     }
 
     // If no HEAD route, default to GET.
-    if (method === 'HEAD' && !match.node.methods.HEAD) method = 'GET'
+    if (method === 'HEAD' && !matched.node.methods.HEAD) method = 'GET'
 
     // OPTIONS support
     if (method === 'OPTIONS') {
       this.status = 204
-      this.set('Allow', match.node.allowMethods)
-      return callback()
+      this.set('Allow', matched.node.allowMethods)
+      return done()
     }
 
-    var handler = match.node.methods[method]
+    var handler = matched.node.methods[method]
 
     // If no route handler is returned
     // it's a 405 error
     if (!handler) {
-      this.set('Allow', match.node.allowMethods)
+      this.set('Allow', matched.node.allowMethods)
       this.throw(405, this.method + ' is not allowed in "' + this.path + '".')
     }
 
-    this.params = this.request.params = match.params
-    return this.thunk(handler.call(this))(callback)
+    this.params = this.request.params = matched.params
+    return this.thunk(handler.call(this))(done)
   })
 }
 

@@ -7,7 +7,7 @@ var Toa = require('toa')
 var Router = require('../')
 
 describe('toa-router', function () {
-  it('GET /', function (done) {
+  it('GET /', function () {
     var router = new Router()
     router.get('/', function () {
       this.body = 'OK'
@@ -17,37 +17,29 @@ describe('toa-router', function () {
       return router.route(this)
     })
 
-    request(app.listen())
+    return request(app.listen())
       .get('/')
       .expect(200)
       .expect('OK')
-      .end(function (err) {
-        app.server.close()
-        done(err)
-      })
   })
 
-  it('GET /abc/123', function (done) {
+  it('GET /abc/123', function () {
     var router = new Router()
     router.get('/:type/:id', function () {
       this.body = '/' + this.params.type + '/' + this.params.id
     })
 
     var app = Toa(function () {
-      return router.route(this)
+      return router
     })
 
-    request(app.listen())
+    return request(app.listen())
       .get('/abc/123')
       .expect(200)
       .expect('/abc/123')
-      .end(function (err) {
-        app.server.close()
-        done(err)
-      })
   })
 
-  it('POST /abc/123', function (done) {
+  it('POST /abc/123', function () {
     var router = new Router()
     router
       .get('/:type/:id', function () {
@@ -57,21 +49,16 @@ describe('toa-router', function () {
         this.body = 'POST /' + this.params.type + '/' + this.params.id
       })
 
-    var app = Toa(function () {
-      return router.route(this)
-    })
+    var app = Toa()
+    app.use(router.toThunk())
 
-    request(app.listen())
+    return request(app.listen())
       .post('/abc/123')
       .expect(200)
       .expect('POST /abc/123')
-      .end(function (err) {
-        app.server.close()
-        done(err)
-      })
   })
 
-  it('HEAD /abc/123', function (done) {
+  it('HEAD /abc/123', function () {
     var router = new Router()
     router.head('/:type/:id', function () {
       this.status = 200
@@ -81,16 +68,12 @@ describe('toa-router', function () {
       return router.route(this)
     })
 
-    request(app.listen())
+    return request(app.listen())
       .head('/abc/123')
       .expect(200)
-      .end(function (err) {
-        app.server.close()
-        done(err)
-      })
   })
 
-  it('HEAD -> GET /abc/123', function (done) {
+  it('HEAD -> GET /abc/123', function () {
     var router = new Router()
     router.get('/:type/:id', function () {
       this.status = 200
@@ -100,16 +83,12 @@ describe('toa-router', function () {
       return router.route(this)
     })
 
-    request(app.listen())
+    return request(app.listen())
       .head('/abc/123')
       .expect(200)
-      .end(function (err) {
-        app.server.close()
-        done(err)
-      })
   })
 
-  it('OPTIONS /abc/123', function (done) {
+  it('OPTIONS /abc/123', function () {
     var router = new Router()
     router
       .get('/:type/:id', function () {})
@@ -121,19 +100,15 @@ describe('toa-router', function () {
       return router.route(this)
     })
 
-    request(app.listen())
+    return request(app.listen())
       .options('/abc/123')
       .expect(204)
       .expect(function (res) {
         assert.strictEqual(res.headers.allow, 'GET, POST, PUT, DELETE')
       })
-      .end(function (err) {
-        app.server.close()
-        done(err)
-      })
   })
 
-  it('501 not implemented', function (done) {
+  it('501 not implemented', function () {
     var router = new Router()
     router.get('/', function () {})
 
@@ -141,16 +116,12 @@ describe('toa-router', function () {
       return router.route(this)
     })
 
-    request(app.listen())
+    return request(app.listen())
       .get('/abc/123')
       .expect(501)
-      .end(function (err) {
-        app.server.close()
-        done(err)
-      })
   })
 
-  it('405 not allowed', function (done) {
+  it('405 not allowed', function () {
     var router = new Router()
     router
       .get('/:type/:id', function () {})
@@ -160,16 +131,12 @@ describe('toa-router', function () {
       return router.route(this)
     })
 
-    request(app.listen())
+    return request(app.listen())
       .put('/abc/123')
       .expect(405)
-      .end(function (err) {
-        app.server.close()
-        done(err)
-      })
   })
 
-  it('define /abc/123', function (done) {
+  it('define /abc/123', function () {
     var router = new Router()
     router.define('/:type/:id')
       .get(function () {})
@@ -181,19 +148,15 @@ describe('toa-router', function () {
       return router.route(this)
     })
 
-    request(app.listen())
+    return request(app.listen())
       .options('/abc/123')
       .expect(204)
       .expect(function (res) {
         assert.strictEqual(res.headers.allow, 'GET, POST, PUT, DELETE')
       })
-      .end(function (err) {
-        app.server.close()
-        done(err)
-      })
   })
 
-  it('multi router', function (done) {
+  it('multi router', function () {
     var router1 = new Router()
     var router2 = new Router('/api')
 
@@ -209,17 +172,13 @@ describe('toa-router', function () {
       return this.thunk.all(router2.route(this), router1.route(this))
     })
 
-    request(app.listen())
+    return request(app.listen())
       .get('/')
       .expect(200)
       .expect('OK')
-      .end(function (err) {
-        app.server.close()
-        done(err)
-      })
   })
 
-  it('multi router2', function (done) {
+  it('multi router2', function () {
     var router1 = new Router()
     var router2 = new Router('/api')
 
@@ -238,13 +197,9 @@ describe('toa-router', function () {
       return this.thunk.all(router2.route(this), router1.route(this))
     })
 
-    request(app.listen())
+    return request(app.listen())
       .get('/api')
       .expect(200)
       .expect('api')
-      .end(function (err) {
-        app.server.close()
-        done(err)
-      })
   })
 })

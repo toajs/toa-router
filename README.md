@@ -16,77 +16,47 @@ A trie router for toa.
 
 ## Demo
 ```js
+'use strict'
+// **Github:** https://github.com/toajs/toa
+//
+// **License:** MIT
 var Toa = require('toa')
 var Router = require('toa-router')
 
-var staticRouter = new Router()
-var APIRouter = new Router('/api')
+var router = new Router()
 
-staticRouter
-  .get('/', function () {
-    // ... GET /
+router
+  .get('', function () {
+    // sync handle
+    this.body = this.method + ' ' + this.path
   })
-  .get('/blog', function () {
-    // ... GET /blog
+  .get('/promise', function () {
+    // promise handle
+    var ctx = this
+    return Promise.resolve().then(function () {
+      ctx.body = ctx.method + ' ' + ctx.path
+    })
   })
-  .get('/about', function () {
-    // ... GET /about
+  .get('/thunk', function () {
+    // thunk handle
+    return function (done) {
+      this.body = this.method + ' ' + this.path
+      done()
+    }
   })
-  .otherwise(function () {
-    // ....
-  })
-
-APIRouter
-  .get('/posts', function () {
-    // ... GET /api/posts
-  })
-  .get('/tasks', function () {
-    // ... GET /api/tasks
-  })
-
-APIRouter.define('/posts/:id')
-  .get(function () {
-    // ... GET /api/post/idxxx
-  })
-  .put(function () {
-    // ... PUT /api/post/idxxx
-  })
-  .post(function () {
-    // ... POST /api/post/idxxx
-  })
-  .del(function () {
-    // ... DELETE /api/post/idxxx
+  .get('/generator', function *() {
+    // generator handle
+    this.body = this.method + ' ' + this.path
   })
 
-APIRouter.define('/tasks/:id')
-  .get(function () {
-    // ... GET /api/tasks/idxxx
-  })
-  .put(function () {
-    // ... PUT /api/tasks/idxxx
-  })
-  .post(function () {
-    // ... POST /api/tasks/idxxx
-  })
-  .del(function () {
-    // ... DELETE /api/tasks/idxxx
-  })
+var app = Toa(function () {
+  return router.route(this)
+})
 
-// use generator
-Toa(function *() {
-  yield [
-    APIRouter.route(this),
-    staticRouter.route(this)
-  ]
-  // do others
-}).listen(3000)
+app.listen(3000, function () {
+  console.log('Listened 3000')
+})
 
-// no generator
-Toa(function () {
-  return this.thunk.all.call(this, APIRouter.route(this), staticRouter.route(this))(function () {
-    // do others
-  })
-}).listen(3000)
 ```
 
 ## Installation
@@ -99,6 +69,44 @@ npm install toa-router
 
 ```js
 var Router = require('toa-router')
+```
+
+### Five usage in Toa:
+
+There five usages for toa-router, but only **One think**: thunk
+
+**Usage 2:**
+```js
+var app = Toa(function () {
+  return router.route(this)
+})
+```
+
+**Usage 2:**
+```js
+var app = Toa(function () {
+  return router
+})
+```
+
+**Usage 3:**
+```js
+var app = Toa(function *() {
+  yield router.route(this)
+})
+```
+
+**Usage 4:**
+```js
+var app = Toa(function *() {
+  yield router
+})
+```
+
+**Usage 5:**
+```js
+var app = Toa()
+app.use(router.toThunk())
 ```
 
 ### new Router([root])
@@ -165,10 +173,21 @@ Each fragment of the pattern, delimited by a `/`, can have the following signatu
 - `string` - ex `/post`
 - `string|string` - `|` separated strings, ex `/post|task`
 - `:name` - Wildcard route matched to a name, ex `/:type`
+- `prefix:name` - Wildcard route matched to a name, ex `/api:type`
 - `(regex)` - A regular expression match without saving the parameter (not recommended), ex `/(post|task)`, `/([a-z0-9]{6})`
 - `:name(regex)`- Named regular expression match ex `/:type/:id([a-z0-9]{6})`
+- `prefix:name(regex)`- Named regular expression match ex `/api:type/:id([a-z0-9]{6})`
 - `*` - Match remaining path without saving the parameter (not recommended), ex `/*` will match all path.
 - `:name(*)`- Named regular expression match, match remaining path, ex `/:type/:other(*)` will match `/post/x` or `/task/x/y` or `/any/x/y/z`...
+
+### Router.prototype.toThunk()
+
+Return a thunk function that wrap the router.
+
+```js
+var app = Toa()
+app.use(router.toThunk())
+```
 
 ### this.params, this.request.params
 
