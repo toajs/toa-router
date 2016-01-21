@@ -5,7 +5,7 @@ A trie router for toa.
 [![NPM version][npm-image]][npm-url]
 [![Build Status][travis-image]][travis-url]
 
-## [toa](https://github.com/toajs/toa)
+## [Toa](https://github.com/toajs/toa)
 
 ## Features
 
@@ -49,8 +49,8 @@ router
     this.body = this.method + ' ' + this.path
   })
 
-var app = Toa(function () {
-  return router.route(this)
+var app = Toa(function *() {
+  yield router
 })
 
 app.listen(3000, function () {
@@ -75,7 +75,7 @@ var Router = require('toa-router')
 
 There five usages for toa-router, but only **One think**: thunk
 
-**Usage 2:**
+**Usage 1:**
 ```js
 var app = Toa(function () {
   return router.route(this)
@@ -164,21 +164,114 @@ router
 
 Set default route definition that will be used when no other route definition is matched.
 
-### Path Definitions
+### Pattern Definitions
 
 For pattern definitions, see [route-trie](https://github.com/zensh/route-trie).
 
 Each fragment of the pattern, delimited by a `/`, can have the following signature:
 
-- `string` - ex `/post`
-- `string|string` - `|` separated strings, ex `/post|task`
-- `:name` - Wildcard route matched to a name, ex `/:type`
-- `prefix:name` - Wildcard route matched to a name, ex `/api:type`
-- `(regex)` - A regular expression match without saving the parameter (not recommended), ex `/(post|task)`, `/([a-z0-9]{6})`
-- `:name(regex)`- Named regular expression match ex `/:type/:id([a-z0-9]{6})`
-- `prefix:name(regex)`- Named regular expression match ex `/api:type/:id([a-z0-9]{6})`
-- `*` - Match remaining path without saving the parameter (not recommended), ex `/*` will match all path.
-- `:name(*)`- Named regular expression match, match remaining path, ex `/:type/:other(*)` will match `/post/x` or `/task/x/y` or `/any/x/y/z`...
+- `string` - simple string.
+
+  Define `/post` will matched:
+  ```
+  '/post'
+  ```
+
+- `string|string` - `|` separated strings.
+
+  Define `/post|task` will matched:
+  ```
+  '/post'
+  '/task'
+  ```
+
+- `:name` - Wildcard route matched to a name.
+
+  Define `/:type` will matched:
+  ```
+  '/post', with params `{type: 'post'}`
+  '/task', with params `{type: 'task'}`
+  ```
+
+- `prefix:name` - Wildcard route matched to a name.
+
+  Define `/api:type` will matched:
+  ```
+  '/apipost', with params `{type: 'post'}`
+  '/apitask', with params `{type: 'task'}`
+  ```
+
+- `(regex)` - A regular expression match without saving the parameter (not recommended).
+
+  Define `/(post|task)`  will matched:
+  ```
+  '/post'
+  '/task'
+  ```
+
+  Define `/([a-z0-9]{6})` will matched:
+  ```
+  '/abcdef'
+  '/123456'
+  ```
+
+- `:name(regex)`- Named regular expression match.
+
+  Define `/:type/:id([a-z0-9]{6})` will matched:
+  ```
+  '/post/abcdef', with params `{type: 'post', id: 'abcdef'}`
+  '/task/123456', with params `{type: 'task', id: '123456'}`
+  ```
+
+- `prefix:name(regex)`- Named regular expression match.
+
+  Define `/api:type/id:id([a-z0-9]{6})` will matched:
+  ```
+  '/apipost/idabcdef', with params `{type: 'post', id: 'abcdef'}`
+  '/apitask/id123456', with params `{type: 'task', id: '123456'}`
+  ```
+
+- `(*)` - Match remaining path without saving the parameter (not recommended).
+
+  Define `/(*)` will match all path.
+
+- `:name(*)`- Named regular expression match, match remaining path.
+
+  Define `/:type/:other(*)` will matched:
+  ```
+  '/post/abcdef', with params `{type: 'post', other: 'abcdef'}`
+  '/post/abcdef/ghi', with params `{type: 'post', other: 'abcdef/ghi'}`
+  '/a/b/c/d/e', with params `{type: 'a', other: 'b/c/d/e'}`
+  ```
+
+**Notice from route-trie for regex pattern:**
+
+```js
+var trie = new Trie()
+var node = trie.define('/abc/([0-9]{2})')
+assert(trie.match('/abc/47').node === node)
+
+var trie = new Trie()
+var node = trie.define('/abc/(\d{2})')
+trie.match('/abc/47')  // null
+assert(trie.match('/abc/dd').node === node)
+
+var trie = new Trie();
+var node = trie.define('/abc/([a-z]{2})')
+assert(trie.match('/abc/ab').node === node)
+
+var trie = new Trie();
+var node = trie.define('/abc/(\w{2})')
+trie.match('/abc/ab')  // null
+assert(trie.match('/abc/ww').node === node)
+
+var trie = new Trie();
+var node = trie.define('/abc/(\\w{2})')
+assert(trie.match('/abc/ab').node === node)
+```
+
+Due to JS [String Escape Notation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String): `'\d' === 'd'`, `trie.define('/abc/(\d{2})') === trie.define('/abc/(d{2})')`.
+`trie.define` accept a string literal, not a regex literal, the `\` maybe be escaped!
 
 ### Router.prototype.toThunk()
 

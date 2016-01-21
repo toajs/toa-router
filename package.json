@@ -4,7 +4,7 @@
   "authors": [
     "Yan Qing <admin@zensh.com>"
   ],
-  "version": "1.2.0",
+  "version": "1.3.0",
   "main": "index.js",
   "repository": {
     "type": "git",
@@ -23,14 +23,14 @@
     "trie-router"
   ],
   "dependencies": {
-    "methods": "^1.1.1",
-    "route-trie": "^1.1.0"
+    "methods": "^1.1.2",
+    "route-trie": "^1.2.1"
   },
   "devDependencies": {
     "mocha": "^2.3.4",
     "supertest": "^1.1.0",
     "standard": "^5.4.1",
-    "toa": "^1.3.0"
+    "toa": "^1.3.2"
   },
   "scripts": {
     "test": "standard && mocha"
