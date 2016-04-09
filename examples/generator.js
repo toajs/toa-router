@@ -3,7 +3,7 @@
 //
 // **License:** MIT
 var Toa = require('toa')
-var Router = require('../index')
+var Router = require('..')
 
 var mockPosts = [{
   id: '0',

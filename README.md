@@ -4,6 +4,7 @@ A trie router for toa.
 
 [![NPM version][npm-image]][npm-url]
 [![Build Status][travis-image]][travis-url]
+[![Downloads][downloads-image]][downloads-url]
 
 ## [Toa](https://github.com/toajs/toa)
 
@@ -317,3 +318,6 @@ The MIT License (MIT)
 
 [travis-url]: https://travis-ci.org/toajs/toa-router
 [travis-image]: http://img.shields.io/travis/toajs/toa-router.svg
+
+[downloads-url]: https://npmjs.org/package/toa-router
+[downloads-image]: http://img.shields.io/npm/dm/toa-router.svg?style=flat-square

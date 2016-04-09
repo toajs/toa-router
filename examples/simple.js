@@ -3,7 +3,7 @@
 //
 // **License:** MIT
 var Toa = require('toa')
-var Router = require('../index')
+var Router = require('..')
 
 var router = new Router()
 

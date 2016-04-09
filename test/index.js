@@ -1,13 +1,14 @@
 'use strict'
-/*global describe, it, Promise*/
+/*global Promise*/
 
 var assert = require('assert')
 var request = require('supertest')
 var Toa = require('toa')
-var Router = require('../')
+var tman = require('tman')
+var Router = require('..')
 
-describe('toa-router', function () {
-  it('GET /', function () {
+tman.suite('toa-router', function () {
+  tman.it('GET /', function () {
     var router = new Router()
     router.get('/', function () {
       this.body = 'OK'
@@ -23,7 +24,7 @@ describe('toa-router', function () {
       .expect('OK')
   })
 
-  it('GET /abc/123', function () {
+  tman.it('GET /abc/123', function () {
     var router = new Router()
     router.get('/:type/:id', function () {
       this.body = '/' + this.params.type + '/' + this.params.id
@@ -39,7 +40,7 @@ describe('toa-router', function () {
       .expect('/abc/123')
   })
 
-  it('POST /abc/123', function () {
+  tman.it('POST /abc/123', function () {
     var router = new Router()
     router
       .get('/:type/:id', function () {
@@ -58,7 +59,7 @@ describe('toa-router', function () {
       .expect('POST /abc/123')
   })
 
-  it('HEAD /abc/123', function () {
+  tman.it('HEAD /abc/123', function () {
     var router = new Router()
     router.head('/:type/:id', function () {
       this.status = 200
@@ -73,7 +74,7 @@ describe('toa-router', function () {
       .expect(200)
   })
 
-  it('HEAD -> GET /abc/123', function () {
+  tman.it('HEAD -> GET /abc/123', function () {
     var router = new Router()
     router.get('/:type/:id', function () {
       this.status = 200
@@ -88,7 +89,7 @@ describe('toa-router', function () {
       .expect(200)
   })
 
-  it('OPTIONS /abc/123', function () {
+  tman.it('OPTIONS /abc/123', function () {
     var router = new Router()
     router
       .get('/:type/:id', function () {})
@@ -108,7 +109,7 @@ describe('toa-router', function () {
       })
   })
 
-  it('501 not implemented', function () {
+  tman.it('501 not implemented', function () {
     var router = new Router()
     router.get('/', function () {})
 
@@ -121,7 +122,7 @@ describe('toa-router', function () {
       .expect(501)
   })
 
-  it('405 not allowed', function () {
+  tman.it('405 not allowed', function () {
     var router = new Router()
     router
       .get('/:type/:id', function () {})
@@ -136,7 +137,7 @@ describe('toa-router', function () {
       .expect(405)
   })
 
-  it('define /abc/123', function () {
+  tman.it('define /abc/123', function () {
     var router = new Router()
     router.define('/:type/:id')
       .get(function () {})
@@ -156,7 +157,7 @@ describe('toa-router', function () {
       })
   })
 
-  it('multi router', function () {
+  tman.it('multi router', function () {
     var router1 = new Router()
     var router2 = new Router('/api')
 
@@ -178,7 +179,7 @@ describe('toa-router', function () {
       .expect('OK')
   })
 
-  it('multi router2', function () {
+  tman.it('multi router2', function () {
     var router1 = new Router()
     var router2 = new Router('/api')
 
