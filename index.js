@@ -78,6 +78,7 @@ Router.prototype.route = function (context) {
     // If no route handler is returned
     // it's a 405 error
     if (!handler) {
+      if (state.otherwise) return this.thunk(state.otherwise.call(this))(done)
       this.set('Allow', matched.node.allowMethods)
       this.throw(405, this.method + ' is not allowed in "' + this.path + '".')
     }

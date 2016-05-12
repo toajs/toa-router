@@ -98,7 +98,7 @@ router2.get('/:others(*)', function () {
   this.body = 'Path is: ' + this.params.others
 })
 
-var app = Toa(function *() {
+var app = Toa(function * () {
   yield [
     router.route(this),
     router2.route(this)

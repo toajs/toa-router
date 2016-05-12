@@ -26,7 +26,7 @@ router
       done()
     }
   })
-  .get('/generator', function *() {
+  .get('/generator', function * () {
     // generator handle
     this.body = this.method + ' ' + this.path
   })

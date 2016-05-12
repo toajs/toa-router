@@ -137,6 +137,42 @@ tman.suite('toa-router', function () {
       .expect(405)
   })
 
+  tman.it('otherwise when not match path', function () {
+    var router = new Router()
+    router
+      .get('/test', function () {})
+      .otherwise(function () {
+        this.body = 'otherwise'
+      })
+
+    var app = Toa(function () {
+      return router.route(this)
+    })
+
+    return request(app.listen())
+      .get('/some')
+      .expect(200)
+      .expect('otherwise')
+  })
+
+  tman.it('otherwise when not match method', function () {
+    var router = new Router()
+    router
+      .get('/test', function () {})
+      .otherwise(function () {
+        this.body = 'otherwise'
+      })
+
+    var app = Toa(function () {
+      return router.route(this)
+    })
+
+    return request(app.listen())
+      .put('/test')
+      .expect(200)
+      .expect('otherwise')
+  })
+
   tman.it('define /abc/123', function () {
     var router = new Router()
     router.define('/:type/:id')
