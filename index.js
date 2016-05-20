@@ -89,41 +89,38 @@ Router.prototype.route = function (context) {
 }
 
 function Route (router, pattern) {
-  Object.defineProperty(this, '_routeState', {
+  Object.defineProperty(this, '_node', {
     enumerable: false,
     configurable: false,
     writable: false,
-    value: {
-      router: router,
-      pattern: pattern
-    }
+    value: router._routerState.trie.define(pattern)
   })
 }
 
 methods.map(function (method) {
   Router.prototype[method] = function (pattern, handler) {
-    var state = this._routerState
-    var node = state.trie.define(pattern)
-    method = method.toUpperCase()
-    node.methods = node.methods || Object.create(null)
-
-    if (node.methods[method]) throw new Error('The route in "' + pattern + '" already defined.')
-    if (typeof handler !== 'function') throw new TypeError('Handler must be a function.')
-    node.methods[method] = handler
-    if (!node.allowMethods) node.allowMethods = method
-    else node.allowMethods += ', ' + method
-
+    defineHandler(this._routerState.trie.define(pattern), method, handler)
     return this
   }
 })
 
 methods.map(function (method) {
   Route.prototype[method] = function (handler) {
-    var state = this._routeState
-    state.router[method](state.pattern, handler)
+    defineHandler(this._node, method, handler)
     return this
   }
 })
 
 Router.prototype.del = Router.prototype.delete
 Route.prototype.del = Route.prototype.delete
+
+function defineHandler (node, method, handler) {
+  method = method.toUpperCase()
+  node.methods = node.methods || Object.create(null)
+
+  if (node.methods[method]) throw new Error('The route in "' + node._nodeState.pattern + '" already defined.')
+  if (typeof handler !== 'function') throw new TypeError('Handler must be a function.')
+  node.methods[method] = handler
+  if (!node.allowMethods) node.allowMethods = method
+  else node.allowMethods += ', ' + method
+}

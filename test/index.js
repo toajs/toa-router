@@ -193,6 +193,26 @@ tman.suite('toa-router', function () {
       })
   })
 
+  tman.it('define /:filePath(*)', function () {
+    var router = new Router()
+    router.define('/:filePath(*)')
+      .get(function () {})
+      .post(function () {})
+      .put(function () {})
+      .del(function () {})
+
+    var app = Toa(function () {
+      return router.route(this)
+    })
+
+    return request(app.listen())
+      .options('/abc/123')
+      .expect(204)
+      .expect(function (res) {
+        assert.strictEqual(res.headers.allow, 'GET, POST, PUT, DELETE')
+      })
+  })
+
   tman.it('multi router', function () {
     var router1 = new Router()
     var router2 = new Router('/api')
