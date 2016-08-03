@@ -4,6 +4,7 @@
 // **License:** MIT
 
 var path = require('path')
+var thunk = require('thunks')()
 var methods = require('methods')
 var Trie = require('route-trie')
 
@@ -46,10 +47,7 @@ Router.prototype.toThunk = function () {
 Router.prototype.route = function (context) {
   var state = this._routerState
 
-  // back-compat
-  if (!context.thunk) context.thunk = arguments[1]
-
-  return context.thunk(function (done) {
+  return thunk.call(context, function (done) {
     var normalPath = path.normalize(this.path).replace(/\\/g, '/')
     var method = this.method
 
@@ -59,7 +57,7 @@ Router.prototype.route = function (context) {
 
     var matched = state.trie.match(normalPath)
     if (!matched) {
-      if (state.otherwise) return this.thunk(state.otherwise.call(this))(done)
+      if (state.otherwise) return thunk.call(this, state.otherwise.call(this))(done)
       this.throw(501, '"' + this.path + '" is not implemented.')
     }
 
@@ -78,13 +76,13 @@ Router.prototype.route = function (context) {
     // If no route handler is returned
     // it's a 405 error
     if (!handler) {
-      if (state.otherwise) return this.thunk(state.otherwise.call(this))(done)
+      if (state.otherwise) return thunk.call(this, state.otherwise.call(this))(done)
       this.set('Allow', matched.node.allowMethods)
       this.throw(405, this.method + ' is not allowed in "' + this.path + '".')
     }
 
     this.params = this.request.params = matched.params
-    return this.thunk(handler.call(this))(done)
+    return thunk.call(this, handler.call(this))(done)
   })
 }
 
@@ -97,14 +95,12 @@ function Route (router, pattern) {
   })
 }
 
-methods.map(function (method) {
+methods.forEach(function (method) {
   Router.prototype[method] = function (pattern, handler) {
     defineHandler(this._routerState.trie.define(pattern), method, handler)
     return this
   }
-})
 
-methods.map(function (method) {
   Route.prototype[method] = function (handler) {
     defineHandler(this._node, method, handler)
     return this

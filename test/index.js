@@ -3,7 +3,7 @@
 
 var assert = require('assert')
 var request = require('supertest')
-var Toa = require('toa')
+var toa = require('toa')
 var tman = require('tman')
 var Router = require('..')
 
@@ -14,7 +14,7 @@ tman.suite('toa-router', function () {
       this.body = 'OK'
     })
 
-    var app = Toa(function () {
+    var app = toa(function () {
       return router.route(this)
     })
 
@@ -30,7 +30,7 @@ tman.suite('toa-router', function () {
       this.body = '/' + this.params.type + '/' + this.params.id
     })
 
-    var app = Toa(function () {
+    var app = toa(function () {
       return router
     })
 
@@ -50,7 +50,7 @@ tman.suite('toa-router', function () {
         this.body = 'POST /' + this.params.type + '/' + this.params.id
       })
 
-    var app = Toa()
+    var app = toa()
     app.use(router.toThunk())
 
     return request(app.listen())
@@ -65,7 +65,7 @@ tman.suite('toa-router', function () {
       this.status = 200
     })
 
-    var app = Toa(function () {
+    var app = toa(function () {
       return router.route(this)
     })
 
@@ -80,7 +80,7 @@ tman.suite('toa-router', function () {
       this.status = 200
     })
 
-    var app = Toa(function () {
+    var app = toa(function () {
       return router.route(this)
     })
 
@@ -97,7 +97,7 @@ tman.suite('toa-router', function () {
       .put('/:type/:id', function () {})
       .del('/:type/:id', function () {})
 
-    var app = Toa(function () {
+    var app = toa(function () {
       return router.route(this)
     })
 
@@ -113,7 +113,7 @@ tman.suite('toa-router', function () {
     var router = new Router()
     router.get('/', function () {})
 
-    var app = Toa(function () {
+    var app = toa(function () {
       return router.route(this)
     })
 
@@ -128,7 +128,7 @@ tman.suite('toa-router', function () {
       .get('/:type/:id', function () {})
       .post('/:type/:id', function () {})
 
-    var app = Toa(function () {
+    var app = toa(function () {
       return router.route(this)
     })
 
@@ -145,7 +145,7 @@ tman.suite('toa-router', function () {
         this.body = 'otherwise'
       })
 
-    var app = Toa(function () {
+    var app = toa(function () {
       return router.route(this)
     })
 
@@ -163,7 +163,7 @@ tman.suite('toa-router', function () {
         this.body = 'otherwise'
       })
 
-    var app = Toa(function () {
+    var app = toa(function () {
       return router.route(this)
     })
 
@@ -181,7 +181,7 @@ tman.suite('toa-router', function () {
       .put(function () {})
       .del(function () {})
 
-    var app = Toa(function () {
+    var app = toa(function () {
       return router.route(this)
     })
 
@@ -201,7 +201,7 @@ tman.suite('toa-router', function () {
       .put(function () {})
       .del(function () {})
 
-    var app = Toa(function () {
+    var app = toa(function () {
       return router.route(this)
     })
 
@@ -225,7 +225,7 @@ tman.suite('toa-router', function () {
       this.body = 'api'
     })
 
-    var app = Toa(function () {
+    var app = toa(function () {
       return this.thunk.all(router2.route(this), router1.route(this))
     })
 
@@ -250,7 +250,7 @@ tman.suite('toa-router', function () {
       }
     })
 
-    var app = Toa(function () {
+    var app = toa(function () {
       return this.thunk.all(router2.route(this), router1.route(this))
     })
 
