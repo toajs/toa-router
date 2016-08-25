@@ -14,6 +14,7 @@ A trie router for toa.
 - `405 Method Not Allowed` support
 - `501 Not Implemented` support
 - `multi router` support with different url prefix
+- `middleware` support middleware with different url prefix
 
 ## Demo
 ```js
@@ -25,6 +26,10 @@ var Toa = require('toa')
 var Router = require('toa-router')
 
 var router = new Router()
+
+router.use(function () {
+  console.log('Hello, middleware.')
+})
 
 router
   .get('', function () {
@@ -164,6 +169,36 @@ router
 ### Router.prototype.otherwise(handler)
 
 Set default route definition that will be used when no other route definition is matched.
+
+### Router.prototype.use(middleware)
+
+Add middlewares to this router. They will run before router handle.
+
+```js
+router.use(function () {
+  console.log('sync middleware')
+})
+
+router.use(function () {
+  console.log('promise middleware')
+  return Promise.resolve('something')
+})
+
+router.use(function (done) {
+  console.log('sync middleware')
+  done()
+})
+
+router.use(function * () {
+  console.log('generator middleware')
+  yield 'something'
+})
+
+router.use(async function () {
+  console.log('async/await middleware')
+  await Promise.resolve('something')
+})
+```
 
 ### Pattern Definitions
 

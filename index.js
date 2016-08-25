@@ -4,15 +4,17 @@
 // **License:** MIT
 
 var path = require('path')
-var thunk = require('thunks')()
+var thunks = require('thunks')
 var methods = require('methods')
 var Trie = require('route-trie')
+var thunk = thunks()
 
 module.exports = Router
 
 function RouterState (root) {
   this.root = typeof root === 'string' ? root.replace(/(\/)+$/, '') : ''
   this.trie = new Trie()
+  this.preHooks = []
   this.otherwise = null
 }
 
@@ -32,8 +34,12 @@ Router.prototype.define = function (pattern) {
 }
 
 Router.prototype.otherwise = function (handler) {
-  if (typeof handler !== 'function') throw new TypeError('Handler must be a function.')
-  this._routerState.otherwise = handler
+  this._routerState.otherwise = toThunkableFn(handler)
+  return this
+}
+
+Router.prototype.use = function (fn) {
+  this._routerState.preHooks.push(toThunkableFn(fn))
   return this
 }
 
@@ -46,6 +52,12 @@ Router.prototype.toThunk = function () {
 
 Router.prototype.route = function (context) {
   var state = this._routerState
+  var otherwise = state.otherwise
+  var preHooks = this._routerState.preHooks.slice()
+
+  function worker (ctx, handler) {
+    return thunk.seq.call(ctx, preHooks)(function () { return handler })
+  }
 
   return thunk.call(context, function (done) {
     var normalPath = path.normalize(this.path).replace(/\\/g, '/')
@@ -57,7 +69,7 @@ Router.prototype.route = function (context) {
 
     var matched = state.trie.match(normalPath)
     if (!matched) {
-      if (state.otherwise) return thunk.call(this, state.otherwise.call(this))(done)
+      if (otherwise) return worker(this, otherwise)(done)
       this.throw(501, '"' + this.path + '" is not implemented.')
     }
 
@@ -76,13 +88,13 @@ Router.prototype.route = function (context) {
     // If no route handler is returned
     // it's a 405 error
     if (!handler) {
-      if (state.otherwise) return thunk.call(this, state.otherwise.call(this))(done)
+      if (otherwise) return worker(this, otherwise)(done)
       this.set('Allow', matched.node.allowMethods)
       this.throw(405, this.method + ' is not allowed in "' + this.path + '".')
     }
 
     this.params = this.request.params = matched.params
-    return thunk.call(this, handler.call(this))(done)
+    worker(this, handler)(done)
   })
 }
 
@@ -97,12 +109,12 @@ function Route (router, pattern) {
 
 methods.forEach(function (method) {
   Router.prototype[method] = function (pattern, handler) {
-    defineHandler(this._routerState.trie.define(pattern), method, handler)
+    defineHandler(this._routerState.trie.define(pattern), method, toThunkableFn(handler))
     return this
   }
 
   Route.prototype[method] = function (handler) {
-    defineHandler(this._node, method, handler)
+    defineHandler(this._node, method, toThunkableFn(handler))
     return this
   }
 })
@@ -114,9 +126,16 @@ function defineHandler (node, method, handler) {
   method = method.toUpperCase()
   node.methods = node.methods || Object.create(null)
 
-  if (node.methods[method]) throw new Error('The route in "' + node._nodeState.pattern + '" already defined.')
-  if (typeof handler !== 'function') throw new TypeError('Handler must be a function.')
+  if (node.methods[method]) {
+    throw new Error('The route in "' + node._nodeState.pattern + '" already defined.')
+  }
   node.methods[method] = handler
   if (!node.allowMethods) node.allowMethods = method
   else node.allowMethods += ', ' + method
+}
+
+function toThunkableFn (fn) {
+  if (typeof fn !== 'function') throw new TypeError('must be a function!')
+  if (thunks.isThunkableFn(fn)) return fn
+  return function (done) { thunk.call(this, fn.call(this))(done) }
 }

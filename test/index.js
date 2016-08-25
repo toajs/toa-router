@@ -1,5 +1,5 @@
 'use strict'
-/*global Promise*/
+/* global Promise */
 
 var assert = require('assert')
 var request = require('supertest')
@@ -258,5 +258,33 @@ tman.suite('toa-router', function () {
       .get('/api')
       .expect(200)
       .expect('api')
+  })
+
+  tman.it('middleware', function () {
+    var count = 0
+    var router = new Router()
+
+    router.use(function () {
+      count++
+    })
+
+    router.use(function (done) {
+      setTimeout(function () {
+        count++
+        done()
+      }, 100)
+    })
+
+    router.get('', function () {
+      this.body = String(count)
+    })
+
+    var app = toa()
+    app.use(router.toThunk())
+
+    return request(app.listen())
+      .get('/')
+      .expect(200)
+      .expect('2')
   })
 })
