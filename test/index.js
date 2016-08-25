@@ -3,6 +3,7 @@
 
 var assert = require('assert')
 var request = require('supertest')
+var thunk = require('thunks')()
 var toa = require('toa')
 var tman = require('tman')
 var Router = require('..')
@@ -260,31 +261,108 @@ tman.suite('toa-router', function () {
       .expect('api')
   })
 
-  tman.it('middleware', function () {
-    var count = 0
-    var router = new Router()
+  tman.suite('middleware', function () {
+    tman.it('work with one router', function () {
+      var count = 0
+      var router = new Router()
 
-    router.use(function () {
-      count++
-    })
-
-    router.use(function (done) {
-      setTimeout(function () {
+      router.use(function () {
         count++
+      })
+
+      router.use(function (done) {
+        setTimeout(function () {
+          count++
+          done()
+        }, 100)
+      })
+
+      router.get('', function () {
+        this.body = String(count)
+      })
+
+      var app = toa()
+      app.use(router.toThunk())
+
+      return request(app.listen())
+        .get('/')
+        .expect(200)
+        .expect('2')
+    })
+
+    tman.it('when error', function () {
+      var count = 0
+      var router = new Router()
+
+      router.use(function (done) {
+        setTimeout(function () {
+          count++
+          done()
+        }, 100)
+      })
+
+      router.use(function () {
+        count++
+        this.throw(400)
+      })
+
+      router.get('', function () {
+        this.body = String(count)
+      })
+
+      var app = toa()
+      app.use(router.toThunk())
+
+      return request(app.listen())
+        .get('/')
+        .expect(400)
+    })
+
+    tman.it('work with multi router', function () {
+      var router1 = new Router('/api')
+      var router2 = new Router()
+
+      router1.use(function () {
+        this.state.name = 'router1'
+      })
+
+      router2.use(function (done) {
+        this.state.name = 'router2'
         done()
-      }, 100)
+      })
+
+      router1.get('/', function () {
+        this.body = 'Hello ' + this.state.name
+      })
+
+      router1.get('/user', function () {
+        this.body = 'User ' + this.state.name
+      })
+
+      router2.get('/', function () {
+        this.body = 'Hello ' + this.state.name
+      })
+
+      var app = toa()
+      app.use(router1.toThunk())
+      app.use(router2.toThunk())
+
+      var server = app.listen()
+
+      return thunk.all([
+        request(server)
+          .get('/api')
+          .expect(200)
+          .expect('Hello router1'),
+        request(server)
+          .get('/')
+          .expect(200)
+          .expect('Hello router2'),
+        request(server)
+          .get('/api/user')
+          .expect(200)
+          .expect('User router1')
+      ])
     })
-
-    router.get('', function () {
-      this.body = String(count)
-    })
-
-    var app = toa()
-    app.use(router.toThunk())
-
-    return request(app.listen())
-      .get('/')
-      .expect(200)
-      .expect('2')
   })
 })

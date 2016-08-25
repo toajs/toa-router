@@ -18,51 +18,53 @@ A trie router for toa.
 
 ## Demo
 ```js
-'use strict'
-// **Github:** https://github.com/toajs/toa
-//
-// **License:** MIT
-var Toa = require('toa')
-var Router = require('toa-router')
+const Toa = require('toa')
+const Router = require('toa-router')
 
-var router = new Router()
+const app = Toa()
+const APIrouter = new Router('/api')
+const otherRouter = new Router()
 
-router.use(function () {
-  console.log('Hello, middleware.')
+app.use(function () {
+  this.state.ip = this.ip
 })
 
-router
-  .get('', function () {
-    // sync handle
-    this.body = this.method + ' ' + this.path
-  })
-  .get('/promise', function () {
-    // promise handle
-    var ctx = this
-    return Promise.resolve().then(function () {
-      ctx.body = ctx.method + ' ' + ctx.path
-    })
-  })
-  .get('/thunk', function () {
-    // thunk handle
-    return function (done) {
-      this.body = this.method + ' ' + this.path
-      done()
-    }
-  })
-  .get('/generator', function *() {
-    // generator handle
-    this.body = this.method + ' ' + this.path
-  })
-
-var app = Toa(function *() {
-  yield router
+APIrouter.use(function * () {
+  this.state.path = this.path
+  this.state.token = yield Promise.resolve({uid: 'uidxxx'})
+  this.state.router = yield Promise.resolve('APIrouter') // some async task
 })
 
-app.listen(3000, function () {
-  console.log('Listened 3000')
+otherRouter.use(function * () {
+  this.state.path = this.path
+  this.state.router = yield Promise.resolve('otherRouter') // some async task
 })
 
+APIrouter.get('/user', function () {
+  this.state.user = 'user'
+  this.body = this.state
+})
+
+APIrouter.get('(*)', function () {
+  this.body = this.state
+})
+
+otherRouter.get('(*)', function () {
+  this.body = this.state
+})
+
+app.use(APIrouter.toThunk()) // we should use APIrouter firstly
+app.use(otherRouter.toThunk())
+
+app.listen(3000)
+
+// Please try GET:
+// http://localhost:3000
+// http://localhost:3000/abc
+// http://localhost:3000/abc/efg
+// http://localhost:3000/api
+// http://localhost:3000/api/abc
+// http://localhost:3000/api/abc/efg
 ```
 
 ## Installation

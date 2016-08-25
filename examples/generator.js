@@ -2,114 +2,50 @@
 // **Github:** https://github.com/toajs/toa
 //
 // **License:** MIT
-var Toa = require('toa')
-var Router = require('..')
+const Toa = require('toa')
+const Router = require('..')
 
-var mockPosts = [{
-  id: '0',
-  title: 'post 1',
-  content: 'content 1'
-}, {
-  id: '1',
-  title: 'post 2',
-  content: 'content 2'
-}, {
-  id: '2',
-  title: 'post 3',
-  content: 'content 3'
-}]
+const app = Toa()
+const APIrouter = new Router('/api')
+const otherRouter = new Router()
 
-var mockTasks = [{
-  id: '0',
-  title: 'task 1',
-  content: 'content 1'
-}, {
-  id: '1',
-  title: 'task 2',
-  content: 'content 2'
-}]
-
-var router = new Router('/api')
-var router2 = new Router()
-
-router.get('/', function () {
-  this.body = 'Hi, toa router'
+app.use(function () {
+  this.state.ip = this.ip
 })
 
-router
-  .define('/:type(posts|tasks)')
-  .get(function () {
-    var data = null
-    switch (this.params.type) {
-      case 'posts':
-        data = mockPosts
-        break
-      case 'tasks':
-        data = mockTasks
-        break
-    }
-    if (data) this.body = resJSON(data)
-    else this.throw(404, this.path + ' is not found!')
-  })
-
-router
-  .define('/:type(posts|tasks)/:id([0-9]+)')
-  .get(function () {
-    var data = null
-    switch (this.params.type) {
-      case 'posts':
-        data = mockPosts[this.params.id]
-        break
-      case 'tasks':
-        data = mockTasks[this.params.id]
-        break
-    }
-    if (data) this.body = resJSON(data)
-    else this.throw(404, this.path + ' is not found!')
-  })
-  .post(function () {
-    var data = null
-    switch (this.params.type) {
-      case 'posts':
-        data = mockPosts[this.params.id]
-        break
-      case 'tasks':
-        data = mockTasks[this.params.id]
-        break
-    }
-    if (data) this.body = resJSON(data)
-    else this.throw(404, this.path + ' is not found!')
-  })
-  .del(function () {
-    var data = null
-    switch (this.params.type) {
-      case 'posts':
-        data = mockPosts[this.params.id]
-        break
-      case 'tasks':
-        data = mockTasks[this.params.id]
-        break
-    }
-    if (data) this.body = resJSON(data)
-    else this.throw(404, this.path + ' is not found!')
-  })
-
-router2.get('/:others(*)', function () {
-  this.body = 'Path is: ' + this.params.others
+APIrouter.use(function * () {
+  this.state.path = this.path
+  this.state.token = yield Promise.resolve({uid: 'uidxxx'})
+  this.state.router = yield Promise.resolve('APIrouter') // some async task
 })
 
-var app = Toa(function * () {
-  yield [
-    router.route(this),
-    router2.route(this)
-  ]
+otherRouter.use(function * () {
+  this.state.path = this.path
+  this.state.router = yield Promise.resolve('otherRouter') // some async task
 })
+
+APIrouter.get('/user', function () {
+  this.state.user = 'user'
+  this.body = this.state
+})
+
+APIrouter.get('(*)', function () {
+  this.body = this.state
+})
+
+otherRouter.get('(*)', function () {
+  this.body = this.state
+})
+
+app.use(APIrouter.toThunk()) // we should use APIrouter firstly
+app.use(otherRouter.toThunk())
 
 app.listen(3000)
 
-function resJSON (data) {
-  return {
-    data: data,
-    timestamp: Date.now()
-  }
-}
+// Please try GET:
+// http://localhost:3000
+// http://localhost:3000/abc
+// http://localhost:3000/abc/efg
+// http://localhost:3000/api
+// http://localhost:3000/api/abc
+// http://localhost:3000/api/abc/efg

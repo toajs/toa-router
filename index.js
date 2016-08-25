@@ -56,14 +56,19 @@ Router.prototype.route = function (context) {
   var preHooks = this._routerState.preHooks.slice()
 
   function worker (ctx, handler) {
-    return thunk.seq.call(ctx, preHooks)(function () { return handler })
+    return thunk.seq.call(ctx, preHooks)(function (err) {
+      if (err != null) throw err
+      return handler
+    })
   }
 
   return thunk.call(context, function (done) {
     var normalPath = path.normalize(this.path).replace(/\\/g, '/')
     var method = this.method
 
-    if (this.routedPath || (state.root && (normalPath + '/').indexOf(state.root + '/') !== 0)) return done()
+    if (this.routedPath || (state.root && (normalPath + '/').indexOf(state.root + '/') !== 0)) {
+      return done()
+    }
     this.routedPath = this.request.routedPath = normalPath
     normalPath = normalPath.replace(state.root, '')
 
