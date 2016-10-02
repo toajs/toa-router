@@ -4,7 +4,7 @@
   "authors": [
     "Yan Qing <admin@zensh.com>"
   ],
-  "version": "1.5.1",
+  "version": "1.5.2",
   "main": "index.js",
   "repository": {
     "type": "git",
@@ -24,14 +24,14 @@
   ],
   "dependencies": {
     "methods": "^1.1.2",
-    "route-trie": "^1.2.6",
-    "thunks": "^4.5.0"
+    "route-trie": "^1.2.7",
+    "thunks": "^4.7.5"
   },
   "devDependencies": {
-    "standard": "^8.0.0",
+    "standard": "^8.3.0",
     "supertest": "^2.0.0",
-    "tman": "^1.1.0",
-    "toa": "^1.8.7"
+    "tman": "^1.6.0",
+    "toa": "^1.8.13"
   },
   "scripts": {
     "test": "standard && tman"

@@ -14,7 +14,7 @@ module.exports = Router
 function RouterState (root) {
   this.root = typeof root === 'string' ? root.replace(/(\/)+$/, '') : ''
   this.trie = new Trie()
-  this.preHooks = []
+  this.beforeHooks = []
   this.otherwise = null
 }
 
@@ -39,7 +39,7 @@ Router.prototype.otherwise = function (handler) {
 }
 
 Router.prototype.use = function (fn) {
-  this._routerState.preHooks.push(toThunkableFn(fn))
+  this._routerState.beforeHooks.push(toThunkableFn(fn))
   return this
 }
 
@@ -53,10 +53,10 @@ Router.prototype.toThunk = function () {
 Router.prototype.route = function (context) {
   var state = this._routerState
   var otherwise = state.otherwise
-  var preHooks = this._routerState.preHooks.slice()
+  var beforeHooks = this._routerState.beforeHooks.slice()
 
   function worker (ctx, handler) {
-    return thunk.seq.call(ctx, preHooks)(function (err) {
+    return thunk.seq.call(ctx, beforeHooks)(function (err) {
       if (err != null) throw err
       return handler
     })
@@ -84,7 +84,7 @@ Router.prototype.route = function (context) {
     // OPTIONS support
     if (method === 'OPTIONS') {
       this.status = 204
-      this.set('Allow', matched.node.allowMethods)
+      this.set('allow', matched.node.allowMethods)
       return done()
     }
 
@@ -94,7 +94,7 @@ Router.prototype.route = function (context) {
     // it's a 405 error
     if (!handler) {
       if (otherwise) return worker(this, otherwise)(done)
-      this.set('Allow', matched.node.allowMethods)
+      this.set('allow', matched.node.allowMethods)
       this.throw(405, this.method + ' is not allowed in "' + this.path + '".')
     }
 
