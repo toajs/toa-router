@@ -3,144 +3,135 @@
 //
 // **License:** MIT
 
-var path = require('path')
-var thunks = require('thunks')
-var methods = require('methods')
-var Trie = require('route-trie')
-var thunk = thunks()
+const http = require('http')
+const thunks = require('thunks')
+const Trie = require('route-trie')
 
-module.exports = Router
+const thunk = thunks.thunk
+const slice = Array.prototype.slice
+const ROUTED = Symbol('Route')
 
-function RouterState (root) {
-  this.root = typeof root === 'string' ? root.replace(/(\/)+$/, '') : ''
-  this.trie = new Trie()
-  this.beforeHooks = []
-  this.otherwise = null
-}
-
-function Router (root) {
-  if (!(this instanceof Router)) return new Router(root)
-
-  Object.defineProperty(this, '_routerState', {
-    enumerable: false,
-    configurable: false,
-    writable: false,
-    value: new RouterState(root)
-  })
-}
-
-Router.prototype.define = function (pattern) {
-  return new Route(this, pattern)
-}
-
-Router.prototype.otherwise = function (handler) {
-  this._routerState.otherwise = toThunkableFn(handler)
-  return this
-}
-
-Router.prototype.use = function (fn) {
-  this._routerState.beforeHooks.push(toThunkableFn(fn))
-  return this
-}
-
-Router.prototype.toThunk = function () {
-  var ctx = this
-  return function (done) {
-    ctx.route(this)(done)
+class Router {
+  constructor (root, options) {
+    root = typeof root === 'string' ? root : ''
+    this.root = root || '/'
+    this.trie = new Trie(options)
+    this.middleware = []
+    this._otherwise = null
   }
-}
 
-Router.prototype.route = function (context) {
-  var state = this._routerState
-  var otherwise = state.otherwise
-  var beforeHooks = this._routerState.beforeHooks.slice()
+  define (pattern) {
+    return new Route(this, pattern)
+  }
 
-  function worker (ctx, handler) {
-    return thunk.seq.call(ctx, beforeHooks)(function (err) {
-      if (err != null) throw err
-      return handler
+  otherwise () {
+    this._otherwise = normalizeHandlers(slice.call(arguments))
+    return this
+  }
+
+  use (fn) {
+    this.middleware.push(toThunkableFn(fn))
+    return this
+  }
+
+  toThunk () {
+    let router = this
+    return function (done) {
+      router.serve(this)(done)
+    }
+  }
+
+  serve (context) {
+    let router = this
+    return thunk.call(context, function * () {
+      let path = this.path
+      let method = this.method
+      let handlers = null
+
+      if (this[ROUTED] || !path.startsWith(router.root)) return
+      this[ROUTED] = true
+
+      if (router.root.length > 1) {
+        path = path.slice(router.root.length)
+        if (!path) path = '/'
+      }
+
+      let matched = router.trie.match(path)
+      if (!matched.node) {
+        if (matched.tsr || matched.fpr) {
+          let url = matched.tsr
+          if (matched.fpr) url = matched.fpr
+          if (router.root.length > 1) {
+            url = router.root + url
+          }
+          this.path = url
+
+          this.status = method === 'GET' ? 301 : 307
+          return this.redirect(this.url)
+        }
+
+        if (!router._otherwise) {
+          this.throw(501, `"${this.path}" not implemented.`)
+        }
+        handlers = router._otherwise
+      } else {
+        handlers = matched.node.getHandler(method)
+        if (!handlers) {
+          // OPTIONS support
+          if (method === 'OPTIONS') {
+            this.status = 204
+            this.set('allow', matched.node.getAllow())
+            return this.end()
+          }
+
+          handlers = router._otherwise
+          if (!handlers) {
+            // If no route handler is returned, it's a 405 error
+            this.set('allow', matched.node.getAllow())
+            this.throw(405, `"${this.method}" is not allowed in "${this.path}".`)
+          }
+        }
+      }
+
+      this.params = this.request.params = matched.params
+      for (let fn of router.middleware) yield fn
+      for (let fn of handlers) yield fn
     })
   }
-
-  return thunk.call(context, function (done) {
-    var normalPath = path.normalize(this.path).replace(/\\/g, '/')
-    var method = this.method
-
-    if (this.routedPath || (state.root && (normalPath + '/').indexOf(state.root + '/') !== 0)) {
-      return done()
-    }
-    this.routedPath = this.request.routedPath = normalPath
-    normalPath = normalPath.replace(state.root, '')
-
-    var matched = state.trie.match(normalPath)
-    if (!matched) {
-      if (otherwise) return worker(this, otherwise)(done)
-      this.throw(501, '"' + this.path + '" is not implemented.')
-    }
-
-    // If no HEAD route, default to GET.
-    if (method === 'HEAD' && !matched.node.methods.HEAD) method = 'GET'
-
-    // OPTIONS support
-    if (method === 'OPTIONS') {
-      this.status = 204
-      this.set('allow', matched.node.allowMethods)
-      return done()
-    }
-
-    var handler = matched.node.methods[method]
-
-    // If no route handler is returned
-    // it's a 405 error
-    if (!handler) {
-      if (otherwise) return worker(this, otherwise)(done)
-      this.set('allow', matched.node.allowMethods)
-      this.throw(405, this.method + ' is not allowed in "' + this.path + '".')
-    }
-
-    this.params = this.request.params = matched.params
-    worker(this, handler)(done)
-  })
 }
 
-function Route (router, pattern) {
-  Object.defineProperty(this, '_node', {
-    enumerable: false,
-    configurable: false,
-    writable: false,
-    value: router._routerState.trie.define(pattern)
-  })
+class Route {
+  constructor (router, pattern) {
+    this.node = router.trie.define(pattern)
+  }
 }
 
-methods.forEach(function (method) {
-  Router.prototype[method] = function (pattern, handler) {
-    defineHandler(this._routerState.trie.define(pattern), method, toThunkableFn(handler))
+for (let method of http.METHODS) {
+  let _method = method.toLowerCase()
+
+  Router.prototype[_method] = function (pattern) {
+    this.trie.define(pattern).handle(method, normalizeHandlers(slice.call(arguments, 1)))
     return this
   }
 
-  Route.prototype[method] = function (handler) {
-    defineHandler(this._node, method, toThunkableFn(handler))
+  Route.prototype[_method] = function (handler) {
+    this.node.handle(method, normalizeHandlers(slice.call(arguments, 0)))
     return this
   }
-})
+}
 
 Router.prototype.del = Router.prototype.delete
 Route.prototype.del = Route.prototype.delete
 
-function defineHandler (node, method, handler) {
-  method = method.toUpperCase()
-  node.methods = node.methods || Object.create(null)
-
-  if (node.methods[method]) {
-    throw new Error('The route in "' + node._nodeState.pattern + '" already defined.')
-  }
-  node.methods[method] = handler
-  if (!node.allowMethods) node.allowMethods = method
-  else node.allowMethods += ', ' + method
+function normalizeHandlers (handlers) {
+  if (!handlers.length) throw new Error('No router handler')
+  return handlers.map(toThunkableFn)
 }
 
 function toThunkableFn (fn) {
-  if (typeof fn !== 'function') throw new TypeError('must be a function!')
+  if (typeof fn !== 'function') throw new TypeError(`${fn} is not a function!`)
   if (thunks.isThunkableFn(fn)) return fn
   return function (done) { thunk.call(this, fn.call(this))(done) }
 }
+
+module.exports = Router
