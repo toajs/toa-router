@@ -1,40 +1,37 @@
 'use strict'
-/* global Promise */
 
-var assert = require('assert')
-var request = require('supertest')
-var thunk = require('thunks')()
-var Toa = require('toa')
-var tman = require('tman')
-var Router = require('..')
+const assert = require('assert')
+const request = require('supertest')
+const thunk = require('thunks')()
+const Toa = require('toa')
+const tman = require('tman')
+const Router = require('..')
 
 tman.suite('toa-router', function () {
-  tman.it('GET /', function () {
-    var router = new Router()
+  tman.it('GET /', function * () {
+    let router = new Router()
     router.get('/', function () {
       this.body = 'OK'
     })
 
-    var app = new Toa()
-    app.use(function () {
-      return router.route(this)
-    })
+    let app = new Toa()
+    app.use(router.toThunk())
 
-    return request(app.listen())
+    yield request(app.listen())
       .get('/')
       .expect(200)
       .expect('OK')
   })
 
   tman.it('GET /abc/123', function () {
-    var router = new Router()
+    let router = new Router()
     router.get('/:type/:id', function () {
       this.body = '/' + this.params.type + '/' + this.params.id
     })
 
-    var app = new Toa()
-    app.use(function () {
-      return router
+    let app = new Toa()
+    app.use(function * () {
+      yield router.serve(this)
     })
 
     return request(app.listen())
@@ -44,7 +41,7 @@ tman.suite('toa-router', function () {
   })
 
   tman.it('POST /abc/123', function () {
-    var router = new Router()
+    let router = new Router()
     router
       .get('/:type/:id', function () {
         this.body = '/' + this.params.type + '/' + this.params.id
@@ -53,8 +50,10 @@ tman.suite('toa-router', function () {
         this.body = 'POST /' + this.params.type + '/' + this.params.id
       })
 
-    var app = new Toa()
-    app.use(router.toThunk())
+    let app = new Toa()
+    app.use(function () {
+      return router.serve(this)
+    })
 
     return request(app.listen())
       .post('/abc/123')
@@ -63,30 +62,14 @@ tman.suite('toa-router', function () {
   })
 
   tman.it('HEAD /abc/123', function () {
-    var router = new Router()
+    let router = new Router()
     router.head('/:type/:id', function () {
       this.status = 200
     })
 
-    var app = new Toa()
+    let app = new Toa()
     app.use(function () {
-      return router.route(this)
-    })
-
-    return request(app.listen())
-      .head('/abc/123')
-      .expect(200)
-  })
-
-  tman.it('HEAD -> GET /abc/123', function () {
-    var router = new Router()
-    router.get('/:type/:id', function () {
-      this.status = 200
-    })
-
-    var app = new Toa()
-    app.use(function () {
-      return router.route(this)
+      return router.serve(this)
     })
 
     return request(app.listen())
@@ -95,16 +78,16 @@ tman.suite('toa-router', function () {
   })
 
   tman.it('OPTIONS /abc/123', function () {
-    var router = new Router()
+    let router = new Router()
     router
       .get('/:type/:id', function () {})
       .post('/:type/:id', function () {})
       .put('/:type/:id', function () {})
       .del('/:type/:id', function () {})
 
-    var app = new Toa()
+    let app = new Toa()
     app.use(function () {
-      return router.route(this)
+      return router.serve(this)
     })
 
     return request(app.listen())
@@ -116,13 +99,13 @@ tman.suite('toa-router', function () {
   })
 
   tman.it('501 not implemented', function () {
-    var router = new Router()
+    let router = new Router()
     router.get('/', function () {})
 
-    var app = new Toa()
+    let app = new Toa()
     app.onerror = function () {}
     app.use(function () {
-      return router.route(this)
+      return router.serve(this)
     })
 
     return request(app.listen())
@@ -131,14 +114,14 @@ tman.suite('toa-router', function () {
   })
 
   tman.it('405 not allowed', function () {
-    var router = new Router()
+    let router = new Router()
     router
       .get('/:type/:id', function () {})
       .post('/:type/:id', function () {})
 
-    var app = new Toa()
+    let app = new Toa()
     app.use(function () {
-      return router.route(this)
+      return router.serve(this)
     })
 
     return request(app.listen())
@@ -147,16 +130,16 @@ tman.suite('toa-router', function () {
   })
 
   tman.it('otherwise when not match path', function () {
-    var router = new Router()
+    let router = new Router()
     router
       .get('/test', function () {})
       .otherwise(function () {
         this.body = 'otherwise'
       })
 
-    var app = new Toa()
+    let app = new Toa()
     app.use(function () {
-      return router.route(this)
+      return router.serve(this)
     })
 
     return request(app.listen())
@@ -166,16 +149,16 @@ tman.suite('toa-router', function () {
   })
 
   tman.it('otherwise when not match method', function () {
-    var router = new Router()
+    let router = new Router()
     router
       .get('/test', function () {})
       .otherwise(function () {
         this.body = 'otherwise'
       })
 
-    var app = new Toa()
+    let app = new Toa()
     app.use(function () {
-      return router.route(this)
+      return router.serve(this)
     })
 
     return request(app.listen())
@@ -185,16 +168,16 @@ tman.suite('toa-router', function () {
   })
 
   tman.it('define /abc/123', function () {
-    var router = new Router()
+    let router = new Router()
     router.define('/:type/:id')
       .get(function () {})
       .post(function () {})
       .put(function () {})
       .del(function () {})
 
-    var app = new Toa()
+    let app = new Toa()
     app.use(function () {
-      return router.route(this)
+      return router.serve(this)
     })
 
     return request(app.listen())
@@ -205,17 +188,17 @@ tman.suite('toa-router', function () {
       })
   })
 
-  tman.it('define /:filePath(*)', function () {
-    var router = new Router()
-    router.define('/:filePath(*)')
+  tman.it('define /:filePath*', function () {
+    let router = new Router()
+    router.define('/:filePath*')
       .get(function () {})
       .post(function () {})
       .put(function () {})
       .del(function () {})
 
-    var app = new Toa()
+    let app = new Toa()
     app.use(function () {
-      return router.route(this)
+      return router.serve(this)
     })
 
     return request(app.listen())
@@ -227,8 +210,8 @@ tman.suite('toa-router', function () {
   })
 
   tman.it('multi router', function () {
-    var router1 = new Router()
-    var router2 = new Router('/api')
+    let router1 = new Router()
+    let router2 = new Router('/api')
 
     router1.get('/', function () {
       this.body = 'OK'
@@ -238,9 +221,9 @@ tman.suite('toa-router', function () {
       this.body = 'api'
     })
 
-    var app = new Toa()
-    app.use(function () {
-      return this.thunk.all(router2.route(this), router1.route(this))
+    let app = new Toa()
+    app.use(function * () {
+      yield [router2.serve(this), router1.serve(this)]
     })
 
     return request(app.listen())
@@ -250,8 +233,8 @@ tman.suite('toa-router', function () {
   })
 
   tman.it('multi router2', function () {
-    var router1 = new Router()
-    var router2 = new Router('/api')
+    let router1 = new Router()
+    let router2 = new Router('/api')
 
     router1.get('/', function () {
       this.body = 'OK'
@@ -264,10 +247,9 @@ tman.suite('toa-router', function () {
       }
     })
 
-    var app = new Toa()
-    app.use(function () {
-      return this.thunk.all(router2.route(this), router1.route(this))
-    })
+    let app = new Toa()
+    app.use(router2.toThunk())
+    app.use(router1.toThunk())
 
     return request(app.listen())
       .get('/api')
@@ -277,8 +259,8 @@ tman.suite('toa-router', function () {
 
   tman.suite('middleware', function () {
     tman.it('work with one router', function () {
-      var count = 0
-      var router = new Router()
+      let count = 0
+      let router = new Router()
 
       router.use(function () {
         count++
@@ -295,7 +277,7 @@ tman.suite('toa-router', function () {
         this.body = String(count)
       })
 
-      var app = new Toa()
+      let app = new Toa()
       app.use(router.toThunk())
 
       return request(app.listen())
@@ -305,8 +287,8 @@ tman.suite('toa-router', function () {
     })
 
     tman.it('when error', function () {
-      var count = 0
-      var router = new Router()
+      let count = 0
+      let router = new Router()
 
       router.use(function (done) {
         setTimeout(function () {
@@ -324,7 +306,7 @@ tman.suite('toa-router', function () {
         this.body = String(count)
       })
 
-      var app = new Toa()
+      let app = new Toa()
       app.use(router.toThunk())
 
       return request(app.listen())
@@ -333,8 +315,8 @@ tman.suite('toa-router', function () {
     })
 
     tman.it('work with multi router', function () {
-      var router1 = new Router('/api')
-      var router2 = new Router()
+      let router1 = new Router('/api')
+      let router2 = new Router()
 
       router1.use(function () {
         this.state.name = 'router1'
@@ -357,11 +339,11 @@ tman.suite('toa-router', function () {
         this.body = 'Hello ' + this.state.name
       })
 
-      var app = new Toa()
+      let app = new Toa()
       app.use(router1.toThunk())
       app.use(router2.toThunk())
 
-      var server = app.listen()
+      let server = app.listen()
 
       return thunk.all([
         request(server)

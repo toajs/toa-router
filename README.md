@@ -10,11 +10,15 @@ A trie router for toa.
 
 ## Features
 
-- `OPTIONS` support
-- `405 Method Not Allowed` support
-- `501 Not Implemented` support
-- `multi router` support with different url prefix
-- `middleware` support middleware with different url prefix
+1. Support regexp
+2. Support multi-router
+3. Support router layer middlewares
+4. Support fixed path automatic redirection
+5. Support trailing slash automatic redirection
+6. Automatic handle `405 Method Not Allowed`
+7. Automatic handle `501 Not Implemented`
+8. Automatic handle `OPTIONS` method
+9. Best Performance
 
 ## Demo
 ```js
@@ -45,11 +49,11 @@ APIrouter.get('/user', function () {
   this.body = this.state
 })
 
-APIrouter.get('(*)', function () {
+APIrouter.get('/:other*', function () {
   this.body = this.state
 })
 
-otherRouter.get('(*)', function () {
+otherRouter.get('/:other*', function () {
   this.body = this.state
 })
 
@@ -76,72 +80,28 @@ npm install toa-router
 ## API
 
 ```js
-var Router = require('toa-router')
+const Router = require('toa-router')
 ```
 
-### Five usage in Toa:
-
-There five usages for toa-router, but only **One think**: thunk
-
-**Usage 1:**
-```js
-var app = Toa(function () {
-  return router.route(this)
-})
-```
-
-**Usage 2:**
-```js
-var app = Toa(function () {
-  return router
-})
-```
-
-**Usage 3:**
-```js
-var app = Toa(function *() {
-  yield router.route(this)
-})
-```
-
-**Usage 4:**
-```js
-var app = Toa(function *() {
-  yield router
-})
-```
-
-**Usage 5:**
-```js
-var app = Toa()
-app.use(router.toThunk())
-```
-
-### new Router([root])
+### new Router(root, options)
 
 - `root` *Option*, `String`, define the router's scope。
 
 ```js
-var router = new Router()
-var APIRouter = new Router('/api')
+const router = new Router()
+const APIRouter = new Router('/api')
 ```
 
-### Router.prototype.route(context)
+### Router.prototype.serve(context)
 
-Run the router with `context`.
-
-```js
-Toa(function () {
-  return router.route(this)
-}).listen(3000)
-```
+Returns thunk function.
 
 ### Router.prototype.define(pattern)
 
 Define a route with the url pattern.
 
 ```js
-var route = router.define('/:type/:id')
+const route = router.define('/:type/:id')
 
 route.get(function () {})
   .put(function () {})
@@ -150,25 +110,25 @@ route.get(function () {})
 // support all `http.METHODS`: 'get', 'post', 'put', 'head', 'delete', 'options', 'trace', 'copy', 'lock'...
 ```
 
-### Router.prototype.get(pattern, handler)
-### Router.prototype.put(pattern, handler)
-### Router.prototype.post(pattern, handler)
-### Router.prototype.del(pattern, handler)
+### Router.prototype.get(pattern, handler...)
+### Router.prototype.put(pattern, handler...)
+### Router.prototype.post(pattern, handler...)
+### Router.prototype.del(pattern, handler...)
 ### And more `http.METHODS` ('head', 'delete', 'options', 'trace', 'copy', 'lock'...)
 
 Support generator handler:
 
 ```js
 router
-  .get('/:type/:id', function *() {
+  .get('/:type/:id', function * () {
     // ...
   })
-  .put('/:type/:id', function *() {
+  .put('/:type/:id', function * () {
     // ...
   })
 ```
 
-### Router.prototype.otherwise(handler)
+### Router.prototype.otherwise(handler...)
 
 Set default route definition that will be used when no other route definition is matched.
 
@@ -202,149 +162,93 @@ router.use(async function () {
 })
 ```
 
-### Pattern Definitions
-
-For pattern definitions, see [route-trie](https://github.com/zensh/route-trie).
-
-Each fragment of the pattern, delimited by a `/`, can have the following signature:
-
-- `string` - simple string.
-
-  Define `/post` will matched:
-  ```
-  '/post'
-  ```
-
-- `string|string` - `|` separated strings.
-
-  Define `/post|task` will matched:
-  ```
-  '/post'
-  '/task'
-  ```
-
-- `:name` - Wildcard route matched to a name.
-
-  Define `/:type` will matched:
-  ```
-  '/post', with params `{type: 'post'}`
-  '/task', with params `{type: 'task'}`
-  ```
-
-- `prefix:name` - Wildcard route matched to a name.
-
-  Define `/api:type` will matched:
-  ```
-  '/apipost', with params `{type: 'post'}`
-  '/apitask', with params `{type: 'task'}`
-  ```
-
-- `(regex)` - A regular expression match without saving the parameter (not recommended).
-
-  Define `/(post|task)`  will matched:
-  ```
-  '/post'
-  '/task'
-  ```
-
-  Define `/([a-z0-9]{6})` will matched:
-  ```
-  '/abcdef'
-  '/123456'
-  ```
-
-- `:name(regex)`- Named regular expression match.
-
-  Define `/:type/:id([a-z0-9]{6})` will matched:
-  ```
-  '/post/abcdef', with params `{type: 'post', id: 'abcdef'}`
-  '/task/123456', with params `{type: 'task', id: '123456'}`
-  ```
-
-- `prefix:name(regex)`- Named regular expression match.
-
-  Define `/api:type/id:id([a-z0-9]{6})` will matched:
-  ```
-  '/apipost/idabcdef', with params `{type: 'post', id: 'abcdef'}`
-  '/apitask/id123456', with params `{type: 'task', id: '123456'}`
-  ```
-
-- `(*)` - Match remaining path without saving the parameter (not recommended).
-
-  Define `/(*)` will match all path.
-
-- `:name(*)`- Named regular expression match, match remaining path.
-
-  Define `/:type/:other(*)` will matched:
-  ```
-  '/post/abcdef', with params `{type: 'post', other: 'abcdef'}`
-  '/post/abcdef/ghi', with params `{type: 'post', other: 'abcdef/ghi'}`
-  '/a/b/c/d/e', with params `{type: 'a', other: 'b/c/d/e'}`
-  ```
-
-**Notice from route-trie for regex pattern:**
-
-```js
-var trie = new Trie()
-var node = trie.define('/abc/([0-9]{2})')
-assert(trie.match('/abc/47').node === node)
-
-var trie = new Trie()
-var node = trie.define('/abc/(\d{2})')
-trie.match('/abc/47')  // null
-assert(trie.match('/abc/dd').node === node)
-
-var trie = new Trie();
-var node = trie.define('/abc/([a-z]{2})')
-assert(trie.match('/abc/ab').node === node)
-
-var trie = new Trie();
-var node = trie.define('/abc/(\w{2})')
-trie.match('/abc/ab')  // null
-assert(trie.match('/abc/ww').node === node)
-
-var trie = new Trie();
-var node = trie.define('/abc/(\\w{2})')
-assert(trie.match('/abc/ab').node === node)
-```
-
-Due to JS [String Escape Notation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String): `'\d' === 'd'`, `trie.define('/abc/(\d{2})') === trie.define('/abc/(d{2})')`.
-`trie.define` accept a string literal, not a regex literal, the `\` maybe be escaped!
 
 ### Router.prototype.toThunk()
 
 Return a thunk function that wrap the router.
 
 ```js
-var app = Toa()
+const app = Toa()
 app.use(router.toThunk())
 ```
 
-### this.params, this.request.params
+### context.params, context.request.params
 
 `this.params` will be defined with any matched parameters.
 
-```js
-router
-  .define('/:type(posts|tasks)')
-  .get(function () {
-    var data = null
-    switch (this.params.type) {
-      case 'posts':
-        data = mockPosts
-        break
-      case 'tasks':
-        data = mockTasks
-        break
-    }
-    if (data) this.body = resJSON(data)
-    else this.throw(404, this.path + ' is not found!')
-  })
+### Pattern Definitions
+
+For pattern definitions, see [route-trie](https://github.com/zensh/route-trie).
+
+The defined pattern can contain three types of parameters:
+
+| Syntax | Description |
+|--------|------|
+| `:name` | named parameter |
+| `:name*` | named with catch-all parameter |
+| `:name(regexp)` | named with regexp parameter |
+| `::name` | not named parameter, it is literal `:name` |
+
+Named parameters are dynamic path segments. They match anything until the next '/' or the path end:
+
+Defined: `/api/:type/:ID`
+```
+/api/user/123             matched: type="user", ID="123"
+/api/user                 no match
+/api/user/123/comments    no match
 ```
 
-### this.routedPath, this.request.routedPath
+Named with catch-all parameters match anything until the path end, including the directory index (the '/' before the catch-all). Since they match anything until the end, catch-all parameters must always be the final path element.
 
-`this.routedPath` will be defined with routed path.
+Defined: `/files/:filepath*`
+```
+/files                           no match
+/files/LICENSE                   matched: filepath="LICENSE"
+/files/templates/article.html    matched: filepath="templates/article.html"
+```
+
+Named with regexp parameters match anything using regexp until the next '/' or the path end:
+
+Defined: `/api/:type/:ID(^\\d+$)`
+```
+/api/user/123             matched: type="user", ID="123"
+/api/user                 no match
+/api/user/abc             no match
+/api/user/123/comments    no match
+```
+
+The value of parameters is saved on the `context.params`. Retrieve the value of a parameter by name:
+```
+let type = this.params.type
+let id   = this.params.ID
+```
+
+**Notice for regex pattern** from [route-trie](https://github.com/zensh/route-trie):
+
+As mentioned above, you may use regular expressions defining node:
+
+```js
+var node = trie.define('/abc/:name([0-9]{2})')
+assert(trie.match('/abc/47').node === node)
+```
+
+But due to [JavaScript String Escape Notation](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String): `'\d' === 'd'`, `trie.define('/abc/:name(\d{2})') === trie.define('/abc/:name(d{2})')`.
+`trie.define` accept a string literal, not a regex literal, the `\` maybe be escaped!
+
+```js
+var node = trie.define('/abc/:name(\d{2})')
+trie.match('/abc/47')  // null
+assert(trie.match('/abc/dd').node === node)
+```
+
+The same for `\w`, `\S`, etc.
+
+To use backslash (`\`) in regular expression you have to escape it manually:
+
+```js
+var node = trie.define('/abc/:name(\\w{2})')
+assert(trie.match('/abc/ab').node === node)
+```
 
 ## License
 
