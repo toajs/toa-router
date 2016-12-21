@@ -4,7 +4,7 @@
   "authors": [
     "Yan Qing <admin@zensh.com>"
   ],
-  "version": "2.0.0",
+  "version": "2.0.1",
   "main": "index.js",
   "repository": {
     "type": "git",
@@ -23,18 +23,19 @@
     "trie-router"
   ],
   "dependencies": {
-    "methods": "^1.1.2",
     "route-trie": "^2.0.2",
     "thunks": "^4.7.5"
   },
   "devDependencies": {
+    "istanbul": "^0.4.5",
     "standard": "^8.6.0",
     "supertest": "^2.0.1",
     "tman": "^1.6.4",
     "toa": "^2.4.2"
   },
   "scripts": {
-    "test": "standard && tman"
+    "test": "standard && tman",
+    "test-cov": "istanbul cover _tman"
   },
   "files": [
     "index.js",

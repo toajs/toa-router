@@ -4,6 +4,7 @@ A trie router for toa.
 
 [![NPM version][npm-image]][npm-url]
 [![Build Status][travis-image]][travis-url]
+[![Coverage Status][coveralls-image]][coveralls-url]
 [![Downloads][downloads-image]][downloads-url]
 
 ## v2 has a breaking change from v1.x https://github.com/toajs/toa-router/tree/v1.5.2
@@ -250,6 +251,9 @@ The MIT License (MIT)
 
 [travis-url]: https://travis-ci.org/toajs/toa-router
 [travis-image]: http://img.shields.io/travis/toajs/toa-router.svg
+
+[coveralls-url]: https://coveralls.io/r/toajs/toa-router
+[coveralls-image]: https://coveralls.io/repos/toajs/toa-router/badge.svg
 
 [downloads-url]: https://npmjs.org/package/toa-router
 [downloads-image]: http://img.shields.io/npm/dm/toa-router.svg?style=flat-square

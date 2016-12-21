@@ -71,10 +71,11 @@ tman.suite('toa-router', function () {
     }, function () {
       called++
       assert.strictEqual(called, 2)
-    }, function () {
+    }, function (done) {
       called++
       assert.strictEqual(called, 3)
       this.body = 'OK'
+      done()
     })
 
     let server = newApp(router)
@@ -164,8 +165,8 @@ tman.suite('toa-router', function () {
 
     let router = new Router()
     router.define('/api')
-      .get(middleware)
-      .head(middleware)
+      .get(middleware, middleware)
+      .head([middleware, middleware])
       .post(middleware)
       .put(middleware)
       .patch(middleware)
