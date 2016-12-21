@@ -6,6 +6,8 @@ A trie router for toa.
 [![Build Status][travis-image]][travis-url]
 [![Downloads][downloads-image]][downloads-url]
 
+## v2 has a breaking change from v1.x https://github.com/toajs/toa-router/tree/v1.5.2
+
 ## [Toa](https://github.com/toajs/toa)
 
 ## Features
@@ -25,50 +27,36 @@ A trie router for toa.
 const Toa = require('toa')
 const Router = require('toa-router')
 
-const app = Toa()
-const APIrouter = new Router('/api')
-const otherRouter = new Router()
+const router = new Router()
+router
+  .get('/:name', function () { // sync handler
+    this.body = `${this.method} /${this.params.name}`
+  })
+  .get('/thunk', function (done) { // thunk handler
+    this.body = 'thunk handler'
+    done()
+  })
+  .get('/generator', function * () { // generator handler
+    this.body = yield Promise.resolve('generator handler')
+  })
+  .get('/async', async function () { // async/await handler in Node.js v7
+    this.body = await Promise.resolve('async/await handler')
+  })
+  .otherwise(function () {
+    this.throw(404)
+  })
 
-app.use(function () {
-  this.state.ip = this.ip
-})
+router.define('/user/:id([0-9]+)')
+  .get(function () {
+    this.body = 'Read from:' + this.method + ' ' + this.path
+  })
+  .post(function () {
+    this.body = 'Add to:' + this.method + ' ' + this.path
+  })
 
-APIrouter.use(function * () {
-  this.state.path = this.path
-  this.state.token = yield Promise.resolve({uid: 'uidxxx'})
-  this.state.router = yield Promise.resolve('APIrouter') // some async task
-})
-
-otherRouter.use(function * () {
-  this.state.path = this.path
-  this.state.router = yield Promise.resolve('otherRouter') // some async task
-})
-
-APIrouter.get('/user', function () {
-  this.state.user = 'user'
-  this.body = this.state
-})
-
-APIrouter.get('/:other*', function () {
-  this.body = this.state
-})
-
-otherRouter.get('/:other*', function () {
-  this.body = this.state
-})
-
-app.use(APIrouter.toThunk()) // we should use APIrouter firstly
-app.use(otherRouter.toThunk())
-
-app.listen(3000)
-
-// Please try GET:
-// http://localhost:3000
-// http://localhost:3000/abc
-// http://localhost:3000/abc/efg
-// http://localhost:3000/api
-// http://localhost:3000/api/abc
-// http://localhost:3000/api/abc/efg
+const app = new Toa()
+app.use(router.toThunk())
+app.listen(3000, () => console.log('Listened 3000'))
 ```
 
 ## Installation
@@ -77,106 +65,7 @@ app.listen(3000)
 npm install toa-router
 ```
 
-## API
-
-```js
-const Router = require('toa-router')
-```
-
-### new Router(root, options)
-
-- `root` *Option*, `String`, define the router's scope。
-
-```js
-const router = new Router()
-const APIRouter = new Router('/api')
-```
-
-### Router.prototype.serve(context)
-
-Returns thunk function.
-
-### Router.prototype.define(pattern)
-
-Define a route with the url pattern.
-
-```js
-const route = router.define('/:type/:id')
-
-route.get(function () {})
-  .put(function () {})
-  .post(function () {})
-  .del(function () {})
-// support all `http.METHODS`: 'get', 'post', 'put', 'head', 'delete', 'options', 'trace', 'copy', 'lock'...
-```
-
-### Router.prototype.get(pattern, handler...)
-### Router.prototype.put(pattern, handler...)
-### Router.prototype.post(pattern, handler...)
-### Router.prototype.del(pattern, handler...)
-### And more `http.METHODS` ('head', 'delete', 'options', 'trace', 'copy', 'lock'...)
-
-Support generator handler:
-
-```js
-router
-  .get('/:type/:id', function * () {
-    // ...
-  })
-  .put('/:type/:id', function * () {
-    // ...
-  })
-```
-
-### Router.prototype.otherwise(handler...)
-
-Set default route definition that will be used when no other route definition is matched.
-
-### Router.prototype.use(middleware)
-
-Add middlewares to this router. They will run before router handle.
-
-```js
-router.use(function () {
-  console.log('sync middleware')
-})
-
-router.use(function () {
-  console.log('promise middleware')
-  return Promise.resolve('something')
-})
-
-router.use(function (done) {
-  console.log('sync middleware')
-  done()
-})
-
-router.use(function * () {
-  console.log('generator middleware')
-  yield 'something'
-})
-
-router.use(async function () {
-  console.log('async/await middleware')
-  await Promise.resolve('something')
-})
-```
-
-
-### Router.prototype.toThunk()
-
-Return a thunk function that wrap the router.
-
-```js
-const app = Toa()
-app.use(router.toThunk())
-```
-
-### context.params, context.request.params
-
-`this.params` will be defined with any matched parameters.
-
-### Pattern Definitions
+## Router Pattern Definitions
 
 For pattern definitions, see [route-trie](https://github.com/zensh/route-trie).
 
@@ -249,6 +138,108 @@ To use backslash (`\`) in regular expression you have to escape it manually:
 var node = trie.define('/abc/:name(\\w{2})')
 assert(trie.match('/abc/ab').node === node)
 ```
+
+## API
+
+```js
+const Router = require('toa-router')
+```
+
+### new Router(options)
+
+- `options.root` {String}, optional, default to `/`, define the router's scope.
+- `options.ignoreCase` {Boolean}, optional, default to `true`, ignore case.
+- `options.fixedPathRedirect`: {Boolean}, default to `true`. If enabled, the trie will detect if the current path can't be matched but a handler for the fixed path exists. matched.fpr will returns either a fixed redirect path or an empty string. For example when "/api/foo" defined and matching "/api//foo", The result matched.fpr is "/api/foo".
+- `options.trailingSlashRedirect`: {Boolean}, default to `true`. If enabled, the trie will detect if the current path can't be matched but a handler for the path with (without) the trailing slash exists. matched.tsr will returns either a redirect path or an empty string. For example if /foo/ is requested but a route only exists for /foo, the client is redirected to /foo. For example when "/api/foo" defined and matching "/api/foo/", The result matched.tsr is "/api/foo".
+
+```js
+const router = new Router()
+const APIRouter = new Router({root: '/api'})
+```
+
+### Router.prototype.serve(context)
+
+Returns thunk function.
+
+### Router.prototype.define(pattern)
+
+Define a route with the url pattern.
+
+```js
+router.define('/:type/:id')
+  .get(someHandler)
+  .put(someHandler)
+  .post(someHandler)
+  .del(someHandler)
+// support all `http.METHODS`: 'get', 'post', 'put', 'head', 'delete', 'options', 'trace', 'copy', 'lock'...
+```
+
+### Router.prototype.get(pattern, handler...)
+### Router.prototype.put(pattern, handler...)
+### Router.prototype.post(pattern, handler...)
+### Router.prototype.del(pattern, handler...)
+### And all `http.METHODS`
+
+Support generator handler and async/await handler:
+```js
+router
+  .get('/:type/:id', function * () {
+    // ...
+  })
+  .put('/:type/:id', async function () {
+    // ...
+  })
+```
+
+Support one more handlers:
+```js
+router
+  .get('/:type/:id', handler1, handler2, handler3)
+  .put('/:type/:id', [handler4, handler5, handler6])
+```
+
+### Router.prototype.otherwise(handler...)
+
+Set default route definition that will be used when no other route definition is matched.
+
+### Router.prototype.use(handler)
+
+Add handler as middleware to this router. They will run before router handler.
+
+```js
+router
+  .use(function () {
+    console.log('sync middleware')
+  })
+  .use(function (done) {
+    console.log('sync middleware')
+    done()
+  })
+  .use(function * () {
+    console.log('generator middleware')
+    yield 'something'
+  })
+  .use(async function () {
+    console.log('async/await middleware')
+    await Promise.resolve('something')
+  })
+  .get('/abc', function () {
+    this.body = 'hello!'
+  })
+```
+
+
+### Router.prototype.toThunk()
+
+Return a thunk function that wrap the router. We can use this thunk function as middleware.
+```js
+const app = Toa()
+app.use(router.toThunk())
+```
+
+### context.params, context.request.params
+
+`this.params` will be defined with any matched parameters.
 
 ## License
 

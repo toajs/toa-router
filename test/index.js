@@ -17,10 +17,19 @@ tman.suite('toa-router', function () {
   tman.it('router.use, router.Handle', function * () {
     let called = 0
     let router = new Router('/api')
+    let thunkObj = {
+      toThunk: () => {
+        return function (done) {
+          called++
+          done()
+        }
+      }
+    }
     router.use(function () {
       assert.ok(this.path.startsWith('/api'))
       called++
     })
+    router.use(thunkObj)
     router.get('/users', function () {
       this.status = 200
       this.body = 'OK'
@@ -41,7 +50,7 @@ tman.suite('toa-router', function () {
       .get('/api/users')
       .expect(200)
       .expect('OK')
-    assert.strictEqual(called, 1)
+    assert.strictEqual(called, 2)
   })
 
   tman.it('router with more middlewares', function * () {
