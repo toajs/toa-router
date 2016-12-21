@@ -12,9 +12,10 @@ const slice = Array.prototype.slice
 const ROUTED = Symbol('Route')
 
 class Router {
-  constructor (root, options) {
-    root = typeof root === 'string' ? root : ''
-    this.root = root || '/'
+  constructor (options) {
+    options = options || {}
+    if (typeof options === 'string') options = {root: options}
+    this.root = typeof options.root === 'string' ? options.root : '/'
     this.trie = new Trie(options)
     this.middleware = []
     this._otherwise = null
@@ -24,13 +25,14 @@ class Router {
     return new Route(this, pattern)
   }
 
-  otherwise () {
-    this._otherwise = normalizeHandlers(slice.call(arguments))
+  otherwise (handler) {
+    let args = Array.isArray(handler) ? handler : slice.call(arguments)
+    this._otherwise = normalizeHandlers(args)
     return this
   }
 
   use (fn) {
-    this.middleware.push(toThunkableFn(fn))
+    this.middleware.push(toThunkable(fn))
     return this
   }
 
@@ -88,7 +90,7 @@ class Router {
           if (!handlers) {
             // If no route handler is returned, it's a 405 error
             this.set('allow', matched.node.getAllow())
-            this.throw(405, `"${this.method}" is not allowed in "${this.path}".`)
+            this.throw(405, `"${this.method}" is not allowed in "${this.path}"`)
           }
         }
       }
@@ -110,12 +112,14 @@ for (let method of http.METHODS) {
   let _method = method.toLowerCase()
 
   Router.prototype[_method] = function (pattern) {
-    this.trie.define(pattern).handle(method, normalizeHandlers(slice.call(arguments, 1)))
+    let args = Array.isArray(arguments[1]) ? arguments[1] : slice.call(arguments, 1)
+    this.trie.define(pattern).handle(method, normalizeHandlers(args))
     return this
   }
 
   Route.prototype[_method] = function (handler) {
-    this.node.handle(method, normalizeHandlers(slice.call(arguments, 0)))
+    let args = Array.isArray(handler) ? handler : slice.call(arguments)
+    this.node.handle(method, normalizeHandlers(args))
     return this
   }
 }
@@ -125,13 +129,16 @@ Route.prototype.del = Route.prototype.delete
 
 function normalizeHandlers (handlers) {
   if (!handlers.length) throw new Error('No router handler')
-  return handlers.map(toThunkableFn)
+  return handlers.map(toThunkable)
 }
 
-function toThunkableFn (fn) {
-  if (typeof fn !== 'function') throw new TypeError(`${fn} is not a function!`)
-  if (thunks.isThunkableFn(fn)) return fn
-  return function (done) { thunk.call(this, fn.call(this))(done) }
+function toThunkable (fn) {
+  if (typeof fn === 'function') {
+    if (thunks.isThunkableFn(fn)) return fn
+    return function (done) { thunk.call(this, fn.call(this))(done) }
+  }
+  if (fn && typeof fn.toThunk === 'function') return fn
+  throw new TypeError(`${fn} is not a function or thunkable object!`)
 }
 
 module.exports = Router
