@@ -1,5 +1,5 @@
-toa-router
-====
+# toa-router
+
 A trie router for toa.
 
 [![NPM version][npm-image]][npm-url]
@@ -14,16 +14,18 @@ A trie router for toa.
 ## Features
 
 1. Support regexp
-2. Support multi-router
-3. Support router layer middlewares
-4. Support fixed path automatic redirection
-5. Support trailing slash automatic redirection
-6. Automatic handle `405 Method Not Allowed`
-7. Automatic handle `501 Not Implemented`
-8. Automatic handle `OPTIONS` method
-9. Best Performance
+1. Support multi-router
+1. Support suffix matching (package trie)
+1. Support router layer middlewares
+1. Support fixed path automatic redirection
+1. Support trailing slash automatic redirection
+1. Automatic handle `405 Method Not Allowed`
+1. Automatic handle `501 Not Implemented`
+1. Automatic handle `OPTIONS` method
+1. Best Performance
 
 ## Demo
+
 ```js
 const Toa = require('toa')
 const Router = require('toa-router')
@@ -70,13 +72,15 @@ npm install toa-router
 
 For pattern definitions, see [route-trie](https://github.com/zensh/route-trie).
 
-The defined pattern can contain three types of parameters:
+The defined pattern can contain six types of parameters:
 
 | Syntax | Description |
 |--------|------|
 | `:name` | named parameter |
-| `:name*` | named with catch-all parameter |
 | `:name(regexp)` | named with regexp parameter |
+| `:name+suffix` | named parameter with suffix matching |
+| `:name(regexp)+suffix` | named with regexp parameter and suffix matching |
+| `:name*` | named with catch-all parameter |
 | `::name` | not named parameter, it is literal `:name` |
 
 Named parameters are dynamic path segments. They match anything until the next '/' or the path end:
@@ -88,6 +92,34 @@ Defined: `/api/:type/:ID`
 /api/user/123/comments    no match
 ```
 
+Named with regexp parameters match anything using regexp until the next '/' or the path end:
+
+Defined: `/api/:type/:ID(^\d+$)`
+```
+/api/user/123             matched: type="user", ID="123"
+/api/user                 no match
+/api/user/abc             no match
+/api/user/123/comments    no match
+```
+
+Named parameters with suffix, such as [Google API Design](https://cloud.google.com/apis/design/custom_methods):
+
+Defined: `/api/:resource/:ID+:undelete`
+```
+/api/file/123                     no match
+/api/file/123:undelete            matched: resource="file", ID="123"
+/api/file/123:undelete/comments   no match
+```
+
+Named with regexp parameters and suffix:
+
+Defined: `/api/:resource/:ID(^\d+$)+:cancel`
+```
+/api/task/123                   no match
+/api/task/123:cancel            matched: resource="task", ID="123"
+/api/task/abc:cancel            no match
+```
+
 Named with catch-all parameters match anything until the path end, including the directory index (the '/' before the catch-all). Since they match anything until the end, catch-all parameters must always be the final path element.
 
 Defined: `/files/:filepath*`
@@ -97,20 +129,10 @@ Defined: `/files/:filepath*`
 /files/templates/article.html    matched: filepath="templates/article.html"
 ```
 
-Named with regexp parameters match anything using regexp until the next '/' or the path end:
-
-Defined: `/api/:type/:ID(^\\d+$)`
+The value of parameters is saved on the `matched.params`. Retrieve the value of a parameter by name:
 ```
-/api/user/123             matched: type="user", ID="123"
-/api/user                 no match
-/api/user/abc             no match
-/api/user/123/comments    no match
-```
-
-The value of parameters is saved on the `context.params`. Retrieve the value of a parameter by name:
-```
-let type = this.params.type
-let id   = this.params.ID
+type := matched.params("type")
+id   := matched.params("ID")
 ```
 
 **Notice for regex pattern** from [route-trie](https://github.com/zensh/route-trie):
@@ -182,6 +204,7 @@ router.define('/:type/:id')
 ### And all `http.METHODS`
 
 Support generator handler and async/await handler:
+
 ```js
 router
   .get('/:type/:id', function * () {
@@ -193,6 +216,7 @@ router
 ```
 
 Support one more handlers:
+
 ```js
 router
   .get('/:type/:id', handler1, handler2, handler3)
@@ -233,6 +257,7 @@ router
 ### Router.prototype.toThunk()
 
 Return a thunk function that wrap the router. We can use this thunk function as middleware.
+
 ```js
 const app = Toa()
 app.use(router.toThunk())

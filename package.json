@@ -4,14 +4,14 @@
   "authors": [
     "Yan Qing <admin@zensh.com>"
   ],
-  "version": "2.0.1",
+  "version": "2.1.0",
   "main": "index.js",
   "repository": {
     "type": "git",
     "url": "git@github.com:toajs/toa-router.git"
   },
   "engines": {
-    "node": ">=4"
+    "node": ">= 4.0.0"
   },
   "homepage": "https://github.com/toajs/toa-router",
   "keywords": [
@@ -23,15 +23,15 @@
     "trie-router"
   ],
   "dependencies": {
-    "route-trie": "^2.0.2",
-    "thunks": "^4.7.5"
+    "route-trie": "^2.1.0",
+    "thunks": "^4.7.6"
   },
   "devDependencies": {
     "istanbul": "^0.4.5",
-    "standard": "^8.6.0",
-    "supertest": "^2.0.1",
-    "tman": "^1.6.4",
-    "toa": "^2.4.2"
+    "standard": "^9.0.2",
+    "supertest": "^3.0.0",
+    "tman": "^1.6.6",
+    "toa": "^2.6.2"
   },
   "scripts": {
     "test": "standard && tman",

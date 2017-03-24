@@ -14,7 +14,7 @@ function newApp (router) {
 }
 
 tman.suite('toa-router', function () {
-  tman.it('router.use, router.Handle', function * () {
+  tman.it('router.use, router.handle', function * () {
     let called = 0
     let router = new Router('/api')
     let thunkObj = {
@@ -38,7 +38,7 @@ tman.suite('toa-router', function () {
     let server = newApp(router)
     yield request(server)
       .get('/')
-      .expect(404)
+      .expect(421)
     assert.strictEqual(called, 0)
 
     yield request(server)
