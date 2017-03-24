@@ -131,8 +131,8 @@ Defined: `/files/:filepath*`
 
 The value of parameters is saved on the `matched.params`. Retrieve the value of a parameter by name:
 ```
-type := matched.params("type")
-id   := matched.params("ID")
+let type = matched.params['type']
+let id   = matched.params['ID']
 ```
 
 **Notice for regex pattern** from [route-trie](https://github.com/zensh/route-trie):
