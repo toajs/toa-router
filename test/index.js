@@ -43,7 +43,7 @@ tman.suite('toa-router', function () {
 
     yield request(server)
       .get('/api')
-      .expect(501)
+      .expect(421)
     assert.strictEqual(called, 0)
 
     yield request(server)
@@ -631,5 +631,47 @@ tman.suite('toa-router', function () {
       .expect(404)
       .expect('some error')
     assert.strictEqual(count, 0)
+  })
+
+  tman.it('multi-router', function * () {
+    let Toa = require('toa')
+    let app = new Toa()
+
+    let router1 = new Router('/abc')
+    router1.get('/:anything', function () {
+      this.body = this.params['anything']
+    })
+
+    let router2 = new Router('/abcd')
+    router2.get('/:anything', function () {
+      this.body = this.params['anything']
+    })
+
+    app.use(router1.toThunk())
+    app.use(router2.toThunk())
+
+    app.onerror = () => {}
+    let server = app.listen()
+
+    yield request(server).get('/')
+      .expect(421)
+    yield request(server).get('/abc')
+      .expect(421)
+    yield request(server).get('/abcd')
+      .expect(421)
+
+    yield request(server).get('/abc/')
+      .expect(200)
+      .expect('')
+    yield request(server).get('/abc/123')
+      .expect(200)
+      .expect('123')
+
+    yield request(server).get('/abcd/')
+      .expect(200)
+      .expect('')
+    yield request(server).get('/abcd/123')
+      .expect(200)
+      .expect('123')
   })
 })

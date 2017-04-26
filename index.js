@@ -16,6 +16,7 @@ class Router {
     options = options || {}
     if (typeof options === 'string') options = {root: options}
     this.root = typeof options.root === 'string' ? options.root : '/'
+    if (!this.root.endsWith('/')) this.root += '/'
     this.trie = new Trie(options)
     this.middleware = []
     this._otherwise = null
@@ -54,8 +55,7 @@ class Router {
       this[ROUTED] = true
 
       if (router.root.length > 1) {
-        path = path.slice(router.root.length)
-        if (!path) path = '/'
+        path = path.slice(router.root.length - 1)
       }
 
       let matched = router.trie.match(path)
@@ -64,7 +64,7 @@ class Router {
           let url = matched.tsr
           if (matched.fpr) url = matched.fpr
           if (router.root.length > 1) {
-            url = router.root + url
+            url = router.root + url.slice(1)
           }
           this.path = url
 
