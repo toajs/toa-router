@@ -43,7 +43,7 @@ tman.suite('toa-router', function () {
 
     yield request(server)
       .get('/api')
-      .expect(421)
+      .expect(501)
     assert.strictEqual(called, 0)
 
     yield request(server)
@@ -597,6 +597,20 @@ tman.suite('toa-router', function () {
       .expect(501)
   })
 
+  tman.it('router with root', function * () {
+    let router = new Router({root: '/api'})
+
+    router
+      .get('/', function () {
+        this.body = 'hello'
+      })
+
+    let server = newApp(router)
+    yield request(server).get('/api')
+      .expect(200)
+      .expect('hello')
+  })
+
   tman.it('router with root and fixedPathRedirect', function * () {
     let router = new Router({root: '/api'})
 
@@ -656,9 +670,11 @@ tman.suite('toa-router', function () {
     yield request(server).get('/')
       .expect(421)
     yield request(server).get('/abc')
-      .expect(421)
+      .expect(200)
+      .expect('')
     yield request(server).get('/abcd')
-      .expect(421)
+      .expect(200)
+      .expect('')
 
     yield request(server).get('/abc/')
       .expect(200)
